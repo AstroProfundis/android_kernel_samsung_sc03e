@@ -321,8 +321,18 @@ static uint_t *sift_rel_mcount(uint_t *mlocp,
 	get_sym_str_and_relp(relhdr, ehdr, &sym0, &str0, &relp);
 
 	for (t = nrel; t; --t) {
-		if (!mcountsym)
-			mcountsym = get_mcountsym(sym0, relp, str0);
+		if (!mcountsym) {
+			Elf_Sym const *const symp =
+				&sym0[Elf_r_sym(relp)];
+			char const *symname = &str0[w(symp->st_name)];
+			char const *mcount = gpfx == '_' ? "_mcount" : "mcount";
+
+			if (symname[0] == '.')
+				++symname;  /* ppc64 hack */
+			if (strcmp(mcount, symname) == 0 ||
+			    (altmcount && strcmp(altmcount, symname) == 0))
+				mcountsym = Elf_r_sym(relp);
+		}
 
 		if (mcountsym == Elf_r_sym(relp) && !is_fake_mcount(relp)) {
 			uint_t const addend =
@@ -462,7 +472,7 @@ __has_rel_mcount(Elf_Shdr const *const relhdr,  /* is SHT_REL or SHT_RELA */
 		succeed_file();
 	}
 	if (w(txthdr->sh_type) != SHT_PROGBITS ||
-	    !(_w(txthdr->sh_flags) & SHF_EXECINSTR))
+	    !is_mcounted_section_name(txtname))
 		return NULL;
 	return txtname;
 }

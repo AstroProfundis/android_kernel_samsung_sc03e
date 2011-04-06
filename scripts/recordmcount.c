@@ -430,8 +430,7 @@ main(int argc, char *argv[])
 	}
 
 	/* Process each file in turn, allowing deep failure. */
-	for (i = optind; i < argc; i++) {
-		char *file = argv[i];
+	for (--argc, ++argv; argc > 0; --argc, ++argv) {
 		int const sjval = setjmp(jmpenv);
 		int len;
 
