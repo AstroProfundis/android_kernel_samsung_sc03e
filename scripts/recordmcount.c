@@ -446,7 +446,7 @@ main(int argc, char *argv[])
 
 		switch (sjval) {
 		default:
-			fprintf(stderr, "internal error: %s\n", file);
+			fprintf(stderr, "internal error: %s\n", argv[0]);
 			exit(1);
 			break;
 		case SJ_SETJMP:    /* normal sequence */
@@ -454,7 +454,7 @@ main(int argc, char *argv[])
 			fd_map = -1;
 			ehdr_curr = NULL;
 			mmap_failed = 1;
-			do_file(file);
+			do_file(argv[0]);
 			break;
 		case SJ_FAIL:    /* error in do_file or below */
 			++n_error;
