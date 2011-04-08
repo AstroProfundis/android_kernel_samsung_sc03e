@@ -360,41 +360,48 @@ static uint_t *sift_rel_mcount(uint_t *mlocp,
  * into nops.
  */
 static void nop_mcount(Elf_Shdr const *const relhdr,
-		       Elf_Ehdr const *const ehdr,
-		       const char *const txtname)
+		       Elf_Ehdr const *const ehdr)
 {
 	Elf_Shdr *const shdr0 = (Elf_Shdr *)(_w(ehdr->e_shoff)
 		+ (void *)ehdr);
-	Elf_Sym const *sym0;
-	char const *str0;
-	Elf_Rel const *relp;
-	Elf_Shdr const *const shdr = &shdr0[w(relhdr->sh_info)];
+	unsigned const symsec_sh_link = w(relhdr->sh_link);
+	Elf_Shdr const *const symsec = &shdr0[symsec_sh_link];
+	Elf_Sym const *const sym0 = (Elf_Sym const *)(_w(symsec->sh_offset)
+		+ (void *)ehdr);
+
+	Elf_Shdr const *const strsec = &shdr0[w(symsec->sh_link)];
+	char const *const str0 = (char const *)(_w(strsec->sh_offset)
+		+ (void *)ehdr);
+
+	Elf_Rel const *const rel0 = (Elf_Rel const *)(_w(relhdr->sh_offset)
+		+ (void *)ehdr);
 	unsigned rel_entsize = _w(relhdr->sh_entsize);
 	unsigned const nrel = _w(relhdr->sh_size) / rel_entsize;
+	Elf_Rel const *relp = rel0;
+
+	Elf_Shdr const *const shdr = &shdr0[w(relhdr->sh_info)];
+
 	unsigned mcountsym = 0;
 	unsigned t;
-	int once = 0;
-
-	get_sym_str_and_relp(relhdr, ehdr, &sym0, &str0, &relp);
 
 	for (t = nrel; t; --t) {
 		int ret = -1;
 
-		if (!mcountsym)
-			mcountsym = get_mcountsym(sym0, relp, str0);
+		if (!mcountsym) {
+			Elf_Sym const *const symp =
+				&sym0[Elf_r_sym(relp)];
+			char const *symname = &str0[w(symp->st_name)];
+			char const *mcount = gpfx == '_' ? "_mcount" : "mcount";
 
-		if (mcountsym == Elf_r_sym(relp) && !is_fake_mcount(relp)) {
-			if (make_nop)
-				ret = make_nop((void *)ehdr, shdr->sh_offset + relp->r_offset);
-			if (warn_on_notrace_sect && !once) {
-				printf("Section %s has mcount callers being ignored\n",
-				       txtname);
-				once = 1;
-				/* just warn? */
-				if (!make_nop)
-					return;
-			}
+			if (symname[0] == '.')
+				++symname;  /* ppc64 hack */
+			if (strcmp(mcount, symname) == 0 ||
+			    (altmcount && strcmp(altmcount, symname) == 0))
+				mcountsym = Elf_r_sym(relp);
 		}
+
+		if (mcountsym == Elf_r_sym(relp) && !is_fake_mcount(relp))
+			ret = make_nop((void *)ehdr, shdr->sh_offset + relp->r_offset);
 
 		/*
 		 * If we successfully removed the mcount, mark the relocation
@@ -472,8 +479,7 @@ __has_rel_mcount(Elf_Shdr const *const relhdr,  /* is SHT_REL or SHT_RELA */
 		succeed_file();
 	}
 	if (w(txthdr->sh_type) != SHT_PROGBITS ||
-	    !(w(txthdr->sh_flags) & SHF_EXECINSTR) ||
-	    !is_mcounted_section_name(txtname))
+	    !(w(txthdr->sh_flags) & SHF_EXECINSTR))
 		return NULL;
 	return txtname;
 }
@@ -547,12 +553,12 @@ do_func(Elf_Ehdr *const ehdr, char const *const fname, unsigned const reltype)
 			mlocp = sift_rel_mcount(mlocp,
 				(void *)mlocp - (void *)mloc0, &mrelp,
 				relhdr, ehdr, recsym, recval, reltype);
-		} else if (txtname && (warn_on_notrace_sect || make_nop)) {
+		} else if (make_nop && txtname) {
 			/*
 			 * This section is ignored by ftrace, but still
 			 * has mcount calls. Convert them to nops now.
 			 */
-			nop_mcount(relhdr, ehdr, txtname);
+			nop_mcount(relhdr, ehdr);
 		}
 	}
 	if (mloc0 != mlocp) {
