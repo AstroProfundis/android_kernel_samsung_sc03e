@@ -430,7 +430,8 @@ main(int argc, char *argv[])
 	}
 
 	/* Process each file in turn, allowing deep failure. */
-	for (--argc, ++argv; argc > 0; --argc, ++argv) {
+	for (i = optind; i < argc; i++) {
+		char *file = argv[i];
 		int const sjval = setjmp(jmpenv);
 		int len;
 
@@ -446,7 +447,7 @@ main(int argc, char *argv[])
 
 		switch (sjval) {
 		default:
-			fprintf(stderr, "internal error: %s\n", argv[0]);
+			fprintf(stderr, "internal error: %s\n", file);
 			exit(1);
 			break;
 		case SJ_SETJMP:    /* normal sequence */
@@ -454,7 +455,7 @@ main(int argc, char *argv[])
 			fd_map = -1;
 			ehdr_curr = NULL;
 			mmap_failed = 1;
-			do_file(argv[0]);
+			do_file(file);
 			break;
 		case SJ_FAIL:    /* error in do_file or below */
 			++n_error;
