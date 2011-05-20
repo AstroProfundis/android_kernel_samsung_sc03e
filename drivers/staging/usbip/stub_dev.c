@@ -211,10 +211,11 @@ static void stub_shutdown_connection(struct usbip_device *ud)
 	if (ud->tcp_tx && !task_is_dead(ud->tcp_tx))
 		kthread_stop(ud->tcp_tx);
 
-	/* 2. close the socket */
 	/*
-	 * tcp_socket is freed after threads are killed.
-	 * So usbip_xmit do not touch NULL socket.
+	 * 2. close the socket
+	 *
+	 * tcp_socket is freed after threads are killed so that usbip_xmit does
+	 * not touch NULL socket.
 	 */
 	if (ud->tcp_socket) {
 		sock_release(ud->tcp_socket);
@@ -234,8 +235,8 @@ static void stub_shutdown_connection(struct usbip_device *ud)
 			list_del(&unlink->list);
 			kfree(unlink);
 		}
-		list_for_each_entry_safe(unlink, tmp,
-						 &sdev->unlink_free, list) {
+		list_for_each_entry_safe(unlink, tmp, &sdev->unlink_free,
+					 list) {
 			list_del(&unlink->list);
 			kfree(unlink);
 		}
@@ -262,22 +263,17 @@ static void stub_device_reset(struct usbip_device *ud)
 
 	/* try to reset the device */
 	ret = usb_reset_device(udev);
-
 	usb_unlock_device(udev);
 
 	spin_lock(&ud->lock);
 	if (ret) {
 		dev_err(&udev->dev, "device reset\n");
 		ud->status = SDEV_ST_ERROR;
-
 	} else {
 		dev_info(&udev->dev, "device reset\n");
 		ud->status = SDEV_ST_AVAILABLE;
-
 	}
 	spin_unlock(&ud->lock);
-
-	return;
 }
 
 static void stub_device_unusable(struct usbip_device *ud)
@@ -424,7 +420,6 @@ static int stub_probe(struct usb_interface *interface,
 				udev_busid);
 			usb_set_intfdata(interface, NULL);
 			busid_priv->interf_count--;
-
 			return err;
 		}
 
@@ -447,7 +442,6 @@ static int stub_probe(struct usb_interface *interface,
 	/* set private data to usb_interface */
 	usb_set_intfdata(interface, sdev);
 	busid_priv->interf_count++;
-
 	busid_priv->sdev = sdev;
 
 	err = stub_add_files(&interface->dev);
@@ -457,7 +451,6 @@ static int stub_probe(struct usb_interface *interface,
 		usb_put_intf(interface);
 
 		busid_priv->interf_count = 0;
-
 		busid_priv->sdev = NULL;
 		stub_device_free(sdev);
 		return err;

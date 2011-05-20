@@ -639,9 +639,7 @@ no_need_xmit:
 	usb_hcd_unlink_urb_from_ep(hcd, urb);
 no_need_unlink:
 	spin_unlock_irqrestore(&the_controller->lock, flags);
-
 	usb_hcd_giveback_urb(vhci_to_hcd(the_controller), urb, urb->status);
-
 	return ret;
 }
 
@@ -1033,9 +1031,8 @@ static int vhci_bus_resume(struct usb_hcd *hcd)
 		hcd->state = HC_STATE_RUNNING;
 	}
 	spin_unlock_irq(&vhci->lock);
-	return rc;
 
-	return 0;
+	return rc;
 }
 
 #else

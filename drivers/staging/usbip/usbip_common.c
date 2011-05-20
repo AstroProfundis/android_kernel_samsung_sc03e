@@ -334,8 +334,8 @@ void usbip_dump_header(struct usbip_header *pdu)
 EXPORT_SYMBOL_GPL(usbip_dump_header);
 
 /* Send/receive messages over TCP/IP. I refer drivers/block/nbd.c */
-int usbip_xmit(int send, struct socket *sock, char *buf,
-	       int size, int msg_flags)
+int usbip_xmit(int send, struct socket *sock, char *buf, int size,
+	       int msg_flags)
 {
 	int result;
 	struct msghdr msg;
@@ -628,8 +628,7 @@ void usbip_header_correct_endian(struct usbip_header *pdu, int send)
 EXPORT_SYMBOL_GPL(usbip_header_correct_endian);
 
 static void usbip_iso_pakcet_correct_endian(
-	struct usbip_iso_packet_descriptor *iso,
-	int send)
+		struct usbip_iso_packet_descriptor *iso, int send)
 {
 	/* does not need all members. but copy all simply. */
 	if (send) {
