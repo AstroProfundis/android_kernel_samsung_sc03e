@@ -92,15 +92,13 @@ For 32-bit we have the following conventions - kernel is built with
 	movq_cfi rsi, 7*8
 	movq_cfi rdx, 6*8
 
-	.if \norcx
-	.else
+	.if \save_rcx
 	movq_cfi rcx, 5*8
 	.endif
 
 	movq_cfi rax, 4*8
 
-	.if \nor891011
-	.else
+	.if \save_r891011
 	movq_cfi r8,  3*8
 	movq_cfi r9,  2*8
 	movq_cfi r10, 1*8
