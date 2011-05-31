@@ -92,13 +92,15 @@ For 32-bit we have the following conventions - kernel is built with
 	movq_cfi rsi, 7*8
 	movq_cfi rdx, 6*8
 
-	.if \save_rcx
+	.if \norcx
+	.else
 	movq_cfi rcx, 5*8
 	.endif
 
 	movq_cfi rax, 4*8
 
-	.if \save_r891011
+	.if \nor891011
+	.else
 	movq_cfi r8,  3*8
 	movq_cfi r9,  2*8
 	movq_cfi r10, 1*8
@@ -109,27 +111,32 @@ For 32-bit we have the following conventions - kernel is built with
 
 #define ARG_SKIP	(9*8)
 
-	.macro RESTORE_ARGS rstor_rax=1, addskip=0, rstor_rcx=1, rstor_r11=1, \
-			    rstor_r8910=1, rstor_rdx=1
-	.if \rstor_r11
+	.macro RESTORE_ARGS skiprax=0, addskip=0, skiprcx=0, skipr11=0, \
+			    skipr8910=0, skiprdx=0
+	.if \skipr11
+	.else
 	movq_cfi_restore 0*8, r11
 	.endif
 
-	.if \rstor_r8910
+	.if \skipr8910
+	.else
 	movq_cfi_restore 1*8, r10
 	movq_cfi_restore 2*8, r9
 	movq_cfi_restore 3*8, r8
 	.endif
 
-	.if \rstor_rax
+	.if \skiprax
+	.else
 	movq_cfi_restore 4*8, rax
 	.endif
 
-	.if \rstor_rcx
+	.if \skiprcx
+	.else
 	movq_cfi_restore 5*8, rcx
 	.endif
 
-	.if \rstor_rdx
+	.if \skiprdx
+	.else
 	movq_cfi_restore 6*8, rdx
 	.endif
 
