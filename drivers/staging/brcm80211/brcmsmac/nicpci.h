@@ -89,4 +89,4 @@ extern void pcicore_pmeen(void *pch);
 extern void pcicore_pmeclr(void *pch);
 extern bool pcicore_pmestat(void *pch);
 
-#endif				/* _NICPCI_H */
+#endif /* _NICPCI_H */
