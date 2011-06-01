@@ -237,7 +237,7 @@ static u32 WLBANDINITFN(wlc_setband_inact) (struct wlc_info *wlc, uint bandunit)
 	WARN_ON((R_REG(&wlc_hw->regs->maccontrol) & MCTL_EN_MAC) != 0);
 
 	/* disable interrupts */
-	macintmask = wl_intrsoff(wlc->wl);
+	macintmask = brcms_intrsoff(wlc->wl);
 
 	/* radio off */
 	wlc_phy_switch_radio(wlc_hw->band->pi, OFF);
@@ -314,7 +314,7 @@ bool wlc_dpc(struct wlc_info *wlc, bool bounded)
 	if (DEVICEREMOVED(wlc)) {
 		wiphy_err(wiphy, "wl%d: %s: dead chip\n", wlc_hw->unit,
 			  __func__);
-		wl_down(wlc->wl);
+		brcms_down(wlc->wl);
 		return false;
 	}
 
@@ -385,7 +385,7 @@ bool wlc_dpc(struct wlc_info *wlc, bool bounded)
 					__func__, wlc_hw->sih->chip,
 					wlc_hw->sih->chiprev);
 		/* big hammer */
-		wl_init(wlc->wl);
+		brcms_init(wlc->wl);
 	}
 
 	/* gptimer timeout */
@@ -396,7 +396,7 @@ bool wlc_dpc(struct wlc_info *wlc, bool bounded)
 	if (macintstatus & MI_RFDISABLE) {
 		BCMMSG(wlc->wiphy, "wl%d: BMAC Detected a change on the"
 		       " RF Disable Input\n", wlc_hw->unit);
-		wl_rfkill_set_hw_state(wlc->wl);
+		brcms_rfkill_set_hw_state(wlc->wl);
 	}
 
 	/* send any enq'd tx packets. Just makes sure to jump start tx */
@@ -407,7 +407,7 @@ bool wlc_dpc(struct wlc_info *wlc, bool bounded)
 	return wlc->macintstatus != 0;
 
  fatal:
-	wl_init(wlc->wl);
+	brcms_init(wlc->wl);
 	return wlc->macintstatus != 0;
 }
 
@@ -525,7 +525,7 @@ static bool wlc_bmac_attach_dmapio(struct wlc_info *wlc, uint j, bool wme)
 					    NULL), DMAREG(wlc_hw, DMA_RX, 0),
 					   (wme ? tune->ntxd : 0), tune->nrxd,
 					   tune->rxbufsz, -1, tune->nrxbufpost,
-					   WL_HWRXOFF, &wl_msg_level);
+					   WL_HWRXOFF, &brcm_msg_level);
 		dma_attach_err |= (NULL == wlc_hw->di[0]);
 
 		/*
@@ -537,7 +537,7 @@ static bool wlc_bmac_attach_dmapio(struct wlc_info *wlc, uint j, bool wme)
 		wlc_hw->di[1] = dma_attach(name, wlc_hw->sih,
 					   DMAREG(wlc_hw, DMA_TX, 1), NULL,
 					   tune->ntxd, 0, 0, -1, 0, 0,
-					   &wl_msg_level);
+					   &brcm_msg_level);
 		dma_attach_err |= (NULL == wlc_hw->di[1]);
 
 		/*
@@ -548,7 +548,7 @@ static bool wlc_bmac_attach_dmapio(struct wlc_info *wlc, uint j, bool wme)
 		wlc_hw->di[2] = dma_attach(name, wlc_hw->sih,
 					   DMAREG(wlc_hw, DMA_TX, 2), NULL,
 					   tune->ntxd, 0, 0, -1, 0, 0,
-					   &wl_msg_level);
+					   &brcm_msg_level);
 		dma_attach_err |= (NULL == wlc_hw->di[2]);
 		/*
 		 * FIFO 3
@@ -558,7 +558,7 @@ static bool wlc_bmac_attach_dmapio(struct wlc_info *wlc, uint j, bool wme)
 		wlc_hw->di[3] = dma_attach(name, wlc_hw->sih,
 					   DMAREG(wlc_hw, DMA_TX, 3),
 					   NULL, tune->ntxd, 0, 0, -1,
-					   0, 0, &wl_msg_level);
+					   0, 0, &brcm_msg_level);
 		dma_attach_err |= (NULL == wlc_hw->di[3]);
 /* Cleaner to leave this as if with AP defined */
 
@@ -1049,7 +1049,7 @@ wlc_bmac_init(struct wlc_hw_info *wlc_hw, chanspec_t chanspec,
 		wlc_clkctl_clk(wlc_hw, CLK_FAST);
 
 	/* disable interrupts */
-	macintmask = wl_intrsoff(wlc->wl);
+	macintmask = brcms_intrsoff(wlc->wl);
 
 	/* set up the specified band and chanspec */
 	wlc_setxband(wlc_hw, CHSPEC_WLCBANDUNIT(chanspec));
@@ -1069,7 +1069,7 @@ wlc_bmac_init(struct wlc_hw_info *wlc_hw, chanspec_t chanspec,
 	wlc_bmac_bsinit(wlc, chanspec);
 
 	/* restore macintmask */
-	wl_intrsrestore(wlc->wl, macintmask);
+	brcms_intrsrestore(wlc->wl, macintmask);
 
 	/* seed wake_override with WLC_WAKE_OVERRIDE_MACSUSPEND since the mac is suspended
 	 * and wlc_enable_mac() will clear this override bit.
@@ -1139,7 +1139,7 @@ int wlc_bmac_up_finish(struct wlc_hw_info *wlc_hw)
 
 	/* FULLY enable dynamic power control and d11 core interrupt */
 	wlc_clkctl_clk(wlc_hw, CLK_DYNAMIC);
-	wl_intrson(wlc_hw->wlc->wl);
+	brcms_intrson(wlc_hw->wlc->wl);
 	return 0;
 }
 
@@ -1160,7 +1160,7 @@ int wlc_bmac_down_prep(struct wlc_hw_info *wlc_hw)
 		wlc_hw->wlc->macintmask = 0;
 	else {
 		/* now disable interrupts */
-		wl_intrsoff(wlc_hw->wlc->wl);
+		brcms_intrsoff(wlc_hw->wlc->wl);
 
 		/* ensure we're running on the pll clock again */
 		wlc_clkctl_clk(wlc_hw, CLK_FAST);
@@ -1200,7 +1200,7 @@ int wlc_bmac_down_finish(struct wlc_hw_info *wlc_hw)
 			if (R_REG(&wlc_hw->regs->maccontrol) &
 			    MCTL_EN_MAC)
 				wlc_suspend_mac_and_wait(wlc_hw->wlc);
-			callbacks += wl_reset(wlc_hw->wlc->wl);
+			callbacks += brcms_reset(wlc_hw->wlc->wl);
 			wlc_coredisable(wlc_hw);
 		}
 
@@ -1884,7 +1884,7 @@ WLBANDINITFN(wlc_bmac_setband) (struct wlc_hw_info *wlc_hw, uint bandunit,
 		wlc->macintstatus = MI_DMAINT;
 
 	/* restore macintmask */
-	wl_intrsrestore(wlc->wl, macintmask);
+	brcms_intrsrestore(wlc->wl, macintmask);
 
 	/* ucode should still be suspended.. */
 	WARN_ON((R_REG(&wlc_hw->regs->maccontrol) & MCTL_EN_MAC) != 0);
@@ -2682,7 +2682,7 @@ static u32 wlc_wlintrsoff(struct wlc_info *wlc)
 	if (!wlc->hw->up)
 		return 0;
 
-	return wl_intrsoff(wlc->wl);
+	return brcms_intrsoff(wlc->wl);
 }
 
 static void wlc_wlintrsrestore(struct wlc_info *wlc, u32 macintmask)
@@ -2690,7 +2690,7 @@ static void wlc_wlintrsrestore(struct wlc_info *wlc, u32 macintmask)
 	if (!wlc->hw->up)
 		return;
 
-	wl_intrsrestore(wlc->wl, macintmask);
+	brcms_intrsrestore(wlc->wl, macintmask);
 }
 
 u32 wlc_intrsoff(struct wlc_info *wlc)
@@ -3064,7 +3064,7 @@ void wlc_suspend_mac_and_wait(struct wlc_info *wlc)
 	if (mc == 0xffffffff) {
 		wiphy_err(wiphy, "wl%d: %s: dead chip\n", wlc_hw->unit,
 			  __func__);
-		wl_down(wlc->wl);
+		brcms_down(wlc->wl);
 		return;
 	}
 	WARN_ON(mc & MCTL_PSM_JMP_0);
@@ -3075,7 +3075,7 @@ void wlc_suspend_mac_and_wait(struct wlc_info *wlc)
 	if (mi == 0xffffffff) {
 		wiphy_err(wiphy, "wl%d: %s: dead chip\n", wlc_hw->unit,
 			  __func__);
-		wl_down(wlc->wl);
+		brcms_down(wlc->wl);
 		return;
 	}
 	WARN_ON(mi & MI_MACSSPNDD);
@@ -3100,7 +3100,7 @@ void wlc_suspend_mac_and_wait(struct wlc_info *wlc)
 	if (mc == 0xffffffff) {
 		wiphy_err(wiphy, "wl%d: %s: dead chip\n", wlc_hw->unit,
 			  __func__);
-		wl_down(wlc->wl);
+		brcms_down(wlc->wl);
 		return;
 	}
 	WARN_ON(mc & MCTL_PSM_JMP_0);

@@ -69,6 +69,8 @@ wl_iw_extra_params_t g_wl_iw_params;
 extern bool wl_iw_conn_status_str(u32 event_type, u32 status,
 				  u32 reason, char *stringBuf, uint buflen);
 
+uint brcm_msg_level = LOG_ERROR_VAL;
+
 #define MAX_WLIW_IOCTL_LEN 1024
 
 #ifdef CONFIG_WIRELESS_EXT
