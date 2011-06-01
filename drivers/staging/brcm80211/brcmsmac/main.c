@@ -19,34 +19,33 @@
 #include <linux/pci_ids.h>
 #include <net/mac80211.h>
 
-#include <bcmdefs.h>
-#include <bcmdevs.h>
+#include <defs.h>
+#include <brcm_hw_ids.h>
 #include <brcmu_utils.h>
 #include <brcmu_wifi.h>
 #include <aiutils.h>
-#include <bcmsrom.h>
-#include "bcmdma.h"
-#include <bcmdma.h>
+#include <srom.h>
+#include "dma.h"
 
-#include "wlc_pmu.h"
+#include "pmu.h"
 #include "d11.h"
-#include "wlc_types.h"
-#include "wlc_cfg.h"
-#include "wlc_rate.h"
-#include "wlc_scb.h"
-#include "wlc_pub.h"
-#include "wlc_key.h"
-#include "wlc_bsscfg.h"
-#include "phy/wlc_phy_hal.h"
-#include "wlc_channel.h"
-#include "wlc_main.h"
-#include "wlc_bmac.h"
-#include "wlc_phy_hal.h"
-#include "wlc_antsel.h"
-#include "wlc_stf.h"
-#include "wlc_ampdu.h"
-#include "wlc_alloc.h"
-#include "brcms_mac80211.h"
+#include "types.h"
+#include "cfg.h"
+#include "rate.h"
+#include "scb.h"
+#include "pub.h"
+#include "key.h"
+#include "bsscfg.h"
+#include "phy/phy_hal.h"
+#include "channel.h"
+#include "main.h"
+#include "bottom_mac.h"
+#include "phy_hal.h"
+#include "antsel.h"
+#include "stf.h"
+#include "ampdu.h"
+#include "alloc.h"
+#include "mac80211_if.h"
 
 /*
  * WPA(2) definitions
@@ -192,7 +191,7 @@ uint brcm_msg_level =
 #if defined(BCMDBG)
 	LOG_ERROR_VAL;
 #else
-    0;
+	0;
 #endif				/* BCMDBG */
 
 /* Find basic rate for a given rate */
@@ -4592,7 +4591,6 @@ wlc_recvctl(struct wlc_info *wlc, d11rxhdr_t *rxh, struct sk_buff *p)
 {
 	int len_mpdu;
 	struct ieee80211_rx_status rx_status;
-	struct ieee80211_hdr *hdr;
 
 	memset(&rx_status, 0, sizeof(rx_status));
 	prep_mac80211_status(wlc, rxh, p, &rx_status);
@@ -4601,13 +4599,6 @@ wlc_recvctl(struct wlc_info *wlc, d11rxhdr_t *rxh, struct sk_buff *p)
 	len_mpdu = p->len - D11_PHY_HDR_LEN - FCS_LEN;
 	skb_pull(p, D11_PHY_HDR_LEN);
 	__skb_trim(p, len_mpdu);
-
-	/* unmute transmit */
-	if (wlc->hw->suspended_fifos) {
-		hdr = (struct ieee80211_hdr *)p->data;
-		if (ieee80211_is_beacon(hdr->frame_control))
-			wlc_bmac_mute(wlc->hw, false, 0);
-	}
 
 	memcpy(IEEE80211_SKB_RXCB(p), &rx_status, sizeof(rx_status));
 	ieee80211_rx_irqsafe(wlc->pub->ieee_hw, p);

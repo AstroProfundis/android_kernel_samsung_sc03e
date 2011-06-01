@@ -21,33 +21,33 @@
 #include <linux/netdevice.h>
 #include <linux/etherdevice.h>
 
-#include <bcmdefs.h>
-#include <bcmdevs.h>
+#include <defs.h>
+#include <brcm_hw_ids.h>
 #include <brcmu_wifi.h>
 #include <aiutils.h>
-#include <bcmsrom.h>
-#include <bcmotp.h>
+#include <srom.h>
+#include "otp.h"
 #include <brcmu_utils.h>
 #include <chipcommon.h>
 #include <nicpci.h>
-#include <bcmdma.h>
+#include "dma.h"
 
-#include "wlc_types.h"
-#include "wlc_pmu.h"
+#include "types.h"
+#include "pmu.h"
 #include "d11.h"
-#include "wlc_cfg.h"
-#include "wlc_rate.h"
-#include "wlc_scb.h"
-#include "wlc_pub.h"
-#include "wlc_key.h"
-#include "phy/wlc_phy_hal.h"
-#include "wlc_channel.h"
-#include "wlc_main.h"
+#include "cfg.h"
+#include "rate.h"
+#include "scb.h"
+#include "pub.h"
+#include "key.h"
+#include "phy/phy_hal.h"
+#include "channel.h"
+#include "main.h"
 #include "ucode_loader.h"
-#include "wlc_antsel.h"
-#include "wlc_alloc.h"
-#include "wlc_bmac.h"
-#include "brcms_mac80211.h"
+#include "antsel.h"
+#include "alloc.h"
+#include "bottom_mac.h"
+#include "mac80211_if.h"
 
 #define	TIMER_INTERVAL_WATCHDOG_BMAC	1000	/* watchdog timer, in unit of ms */
 
@@ -138,6 +138,7 @@ static bool wlc_bmac_validate_chip_access(struct wlc_hw_info *wlc_hw);
 static char *wlc_get_macaddr(struct wlc_hw_info *wlc_hw);
 static void wlc_mhfdef(struct wlc_info *wlc, u16 *mhfs, u16 mhf2_init);
 static void wlc_mctrl_write(struct wlc_hw_info *wlc_hw);
+static void wlc_bmac_mute(struct wlc_hw_info *wlc_hw, bool want, mbool flags);
 static void wlc_ucode_mute_override_set(struct wlc_hw_info *wlc_hw);
 static void wlc_ucode_mute_override_clear(struct wlc_hw_info *wlc_hw);
 static u32 wlc_wlintrsoff(struct wlc_info *wlc);
@@ -2720,7 +2721,7 @@ void wlc_intrsrestore(struct wlc_info *wlc, u32 macintmask)
 	W_REG(&wlc_hw->regs->macintmask, wlc->macintmask);
 }
 
-void wlc_bmac_mute(struct wlc_hw_info *wlc_hw, bool on, mbool flags)
+static void wlc_bmac_mute(struct wlc_hw_info *wlc_hw, bool on, mbool flags)
 {
 	u8 null_ether_addr[ETH_ALEN] = {0, 0, 0, 0, 0, 0};
 
