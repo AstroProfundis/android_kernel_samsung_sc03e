@@ -585,6 +585,8 @@ static ssize_t store_int_volt_table(struct device *device,
 static DEVICE_ATTR(curr_freq, S_IRUGO | S_IWUGO, show_level_lock, store_level_lock);
 static DEVICE_ATTR(lock_list, S_IRUGO, show_locklist, NULL);
 static DEVICE_ATTR(time_in_state, S_IRUGO, show_time_in_state, NULL);
+static DEVICE_ATTR(up_threshold, S_IRUGO | S_IWUGO, show_up_threshold, store_up_threshold);
+static DEVICE_ATTR(ppmu_threshold, S_IRUGO | S_IWUGO, show_ppmu_threshold, store_ppmu_threshold);
 static DEVICE_ATTR(idle_threshold, S_IRUGO | S_IWUGO, show_idle_threshold, store_idle_threshold);
 static DEVICE_ATTR(up_cpu_threshold, S_IRUGO | S_IWUGO, show_up_cpu_threshold, store_up_cpu_threshold);
 static DEVICE_ATTR(max_cpu_threshold, S_IRUGO | S_IWUGO, show_max_cpu_threshold, store_max_cpu_threshold);
