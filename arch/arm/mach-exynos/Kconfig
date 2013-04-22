@@ -1858,7 +1858,6 @@ config CORESIGHT_ETM_DEFAULT_ENABLE
 	  Turns on ETM tracing by default. Otherwise, tracing is
 	  disabled by default but can be enabled by other means.
 
-
 config MACH_KONA_SENSOR
         bool "KONA Sensor Enable"
         help
@@ -1867,3 +1866,8 @@ config MACH_KONA_SENSOR
           BMA254 / BOSCH
           YAS532 / YAMAHA
           GP2A030A / SHARP
+
+config ABB_CONTROL
+	bool "Adaptive body bias control"
+	depends on EXYNOS4_CPUFREQ && CPU_EXYNOS4412
+	default n

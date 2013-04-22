@@ -326,6 +326,8 @@ int exynos4x12_asv_init(struct samsung_asv *asv_info)
 #ifdef CONFIG_GPU_CLOCK_CONTROL
 		mali_dvfs_table_update();
 #endif
+#ifdef CONFIG_ABB_CONTROL
+		abb_control_init();
 #endif
 
 		return -EEXIST;
