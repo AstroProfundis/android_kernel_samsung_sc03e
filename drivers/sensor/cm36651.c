@@ -323,7 +323,9 @@ static ssize_t light_enable_store(struct device *dev,
 	}
 
 #ifdef CONFIG_TOUCH_WAKE
-	if (!new_value) { // Yank555.lu : Proxy disabled, consider proximity not detected
+	if (new_value) { // true if proximity detected
+		proximity_detected();
+	} else {
 		proximity_off();
 	}
 #endif
