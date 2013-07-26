@@ -24,8 +24,17 @@
 #include <linux/mfd/max77693.h>
 #include <linux/mfd/max77693-private.h>
 
+#define SEC_DEBUG_VIB
+
 static unsigned long pwm_val = 50; /* duty in percent */
 static int pwm_duty = 27787; /* duty value, 37050=100%, 27787=50%, 18525=0% */
+
+#ifdef CONFIG_TWEAK_VIB_CTRL
+void vibetonz_update_duty(int duty)
+{
+	pwm_duty = duty;
+}
+#endif
 
 struct max77693_haptic_data {
 	struct max77693_dev *max77693;
@@ -197,7 +206,7 @@ static void haptic_work(struct work_struct *work)
 void vibtonz_en(bool en)
 {
 	if (g_hap_data == NULL) {
-		pr_err("[VIB] %s: the motor is not ready!!!", __func__);
+		printk(KERN_ERR "[VIB] the motor is not ready!!!");
 		return ;
 	}
 
@@ -242,7 +251,7 @@ void vibtonz_pwm(int nForce)
 	int pwm_period = 0;
 
 	if (g_hap_data == NULL) {
-		pr_err("[VIB] %s: the motor is not ready!!!", __func__);
+		printk(KERN_ERR "[VIB] the motor is not ready!!!");
 		return ;
 	}
 
@@ -391,7 +400,7 @@ static int max77693_haptic_probe(struct platform_device *pdev)
 		goto err_timed_output_register;
 	}
 #endif
-	pr_err("[VIB] timed_output device is registrated\n");
+	printk(KERN_DEBUG "[VIB] timed_output device is registrated\n");
 	pr_debug("[VIB] -- %s\n", __func__);
 
 	return error;

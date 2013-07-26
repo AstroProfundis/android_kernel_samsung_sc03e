@@ -115,8 +115,13 @@ static bool g_debug_tkey = FALSE;
 
 static int touchkey_i2c_check(struct touchkey_i2c *tkey_i2c);
 
+#if defined(CONFIG_MACH_M3_JPN_DCM)
+static u16 menu_sensitivity;
+static u16 back_sensitivity;
+#else
 static u8 menu_sensitivity;
 static u8 back_sensitivity;
+#endif
 #if defined(TK_USE_4KEY)
 static u8 home_sensitivity;
 static u8 search_sensitivity;
@@ -124,6 +129,10 @@ static u8 search_sensitivity;
 
 static int touchkey_enable;
 static bool touchkey_probe = true;
+
+#ifdef CONFIG_TWEAK_REPLACE_BACK_MENU
+static int replace_back_menu = 0;
+#endif
 
 static const struct i2c_device_id sec_touchkey_id[] = {
 	{"sec_touchkey", 0},
@@ -721,6 +730,17 @@ static irqreturn_t touchkey_interrupt(int irq, void *dev_id)
 	if (get_tsp_status() && pressed)
 		pr_debug("[TouchKey] touchkey pressed but don't send event because touch is pressed.\n");
 	else {
+#ifdef CONFIG_TWEAK_REPLACE_BACK_MENU
+		if (replace_back_menu) {
+			if (touchkey_keycode[keycode_type] == KEY_BACK) {
+				input_report_key(tkey_i2c->input_dev, KEY_MENU, pressed);
+			} else if (touchkey_keycode[keycode_type] == KEY_MENU) {
+				input_report_key(tkey_i2c->input_dev, KEY_BACK, pressed);
+			} else {
+				input_report_key(tkey_i2c->input_dev, touchkey_keycode[keycode_type], pressed);
+			}
+		} else
+#endif
 		input_report_key(tkey_i2c->input_dev,
 				 touchkey_keycode[keycode_type], pressed);
 		input_sync(tkey_i2c->input_dev);
@@ -1379,8 +1399,17 @@ static ssize_t touchkey_menu_show(struct device *dev,
 
 	ret = i2c_touchkey_read(tkey_i2c->client, KEYCODE_REG, data, 14);
 
+#if defined(CONFIG_MACH_M3_JPN_DCM)
+	printk(KERN_DEBUG "called %s data[12] = %d, data[13] =%d\n", __func__,
+			data[12], data[13]);
+	menu_sensitivity = ((0x00FF & data[12]) << 8) | data[13];
+	printk(KERN_DEBUG "called %s menu_sensitivity =%d\n", __func__,
+			menu_sensitivity);
+#else
 	pr_debug("[Touchkey] %s: data[13] =%d\n", __func__, data[13]);
 	menu_sensitivity = data[13];
+#endif
+
 #else
 	u8 data[10];
 	int ret;
@@ -1404,8 +1433,16 @@ static ssize_t touchkey_back_show(struct device *dev,
 
 	ret = i2c_touchkey_read(tkey_i2c->client, KEYCODE_REG, data, 14);
 
+#if defined(CONFIG_MACH_M3_JPN_DCM)
+	printk(KERN_DEBUG "called %s data[10] = %d, data[11] =%d\n", __func__,
+			data[10], data[11]);
+	back_sensitivity =((0x00FF & data[10]) << 8) | data[11];
+	printk(KERN_DEBUG "called %s back_sensitivity =%d\n", __func__,
+			back_sensitivity);
+#else
 	pr_debug("[Touchkey] %s: data[11] =%d\n", __func__, data[11]);
 	back_sensitivity = data[11];
+#endif
 #else
 	u8 data[10];
 	int ret;
@@ -1555,6 +1592,21 @@ static ssize_t set_touchkey_firm_status_show(struct device *dev,
 	return count;
 }
 
+#ifdef CONFIG_TWEAK_REPLACE_BACK_MENU
+static ssize_t touchkey_replace_back_menu_show(struct device *dev,
+		struct device_attribute *attr, char *buf)
+{
+	return sprintf(buf, "%d\n", replace_back_menu);
+}
+
+static ssize_t touchkey_replace_back_menu_store(struct device *dev,
+		struct device_attribute *attr, const char *buf, size_t size)
+{
+	sscanf(buf, "%d", &replace_back_menu);
+	return size;
+}
+#endif
+
 static DEVICE_ATTR(recommended_version, S_IRUGO | S_IWUSR | S_IWGRP,
 		   touch_version_read, touch_version_write);
 static DEVICE_ATTR(updated_version, S_IRUGO | S_IWUSR | S_IWGRP,
@@ -1584,6 +1636,11 @@ static DEVICE_ATTR(touchkey_firm_version_panel, S_IRUGO | S_IWUSR | S_IWGRP,
 #ifdef LED_LDO_WITH_REGULATOR
 static DEVICE_ATTR(touchkey_brightness, S_IRUGO | S_IWUSR | S_IWGRP, NULL,
 		   brightness_control);
+#endif
+#ifdef CONFIG_TWEAK_REPLACE_BACK_MENU
+static DEVICE_ATTR(touchkey_replace_back_menu, 0666,
+				touchkey_replace_back_menu_show,
+				touchkey_replace_back_menu_store);
 #endif
 
 #if 0 /* #if defined(CONFIG_TARGET_LOCALE_NAATT) */
@@ -1624,6 +1681,9 @@ static struct attribute *touchkey_attributes[] = {
 	&dev_attr_touchkey_firm_version_panel.attr,
 #ifdef LED_LDO_WITH_REGULATOR
 	&dev_attr_touchkey_brightness.attr,
+#endif
+#ifdef CONFIG_TWEAK_REPLACE_BACK_MENU
+	&dev_attr_touchkey_replace_back_menu.attr,
 #endif
 #if 0/* defined(CONFIG_TARGET_LOCALE_NAATT) */
 	&dev_attr_touchkey_autocal_start.attr,
