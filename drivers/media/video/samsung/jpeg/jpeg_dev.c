@@ -31,6 +31,7 @@
 #include <linux/clk.h>
 #include <linux/semaphore.h>
 #include <linux/vmalloc.h>
+#include <linux/cma.h>
 #include <asm/page.h>
 #include <linux/sched.h>
 
@@ -246,6 +247,14 @@ int jpeg_mmap(struct file *filp, struct vm_area_struct *vma)
 	int		ret;
 
 	size = vma->vm_end - vma->vm_start;
+
+/* https://github.com/temasek/android_kernel_samsung_smdk4412/commit/94d3c6110f363096f5117283c801b9447bf1c956#commitcomment-3850418
+	if (!cma_is_registered_region(jpeg_ctrl->mem.base, size)) {
+		pr_err("[%s] handling non-cma region (%#x@%#x)is prohibited\n",
+			__func__, (unsigned int)size, jpeg_ctrl->mem.base);
+		return -EINVAL;
+	}
+*/
 
 	vma->vm_flags |= VM_RESERVED | VM_IO;
 	vma->vm_page_prot = pgprot_noncached(vma->vm_page_prot);
