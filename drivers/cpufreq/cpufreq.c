@@ -566,9 +566,15 @@ static ssize_t show_scaling_setspeed(struct cpufreq_policy *policy, char *buf)
 
 #if defined(CONFIG_CPU_VOLTAGE_CONTROL)
 /* sysfs interface for UV control */
-extern ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf);
 extern ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
-                                      const char *buf, size_t count);
+				 const char *buf, size_t count);
+
+extern ssize_t store_UV_uV_table(struct cpufreq_policy *policy,
+				 const char *buf, size_t count);
+
+extern ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf);
+
+extern ssize_t show_UV_uV_table(struct cpufreq_policy *policy, char *buf);
 #endif /* CONFIG_CPU_VOLTAGE_CONTROL */
 
 /**
@@ -612,6 +618,7 @@ cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
 #if defined(CONFIG_CPU_VOLTAGE_CONTROL)
 cpufreq_freq_attr_rw(UV_mV_table);
+cpufreq_freq_attr_rw(UV_uV_table);
 #endif
 #if defined(CONFIG_MACH_U1)
 cpufreq_freq_attr_rw(asv_group);
@@ -635,6 +642,7 @@ static struct attribute *default_attrs[] = {
 	&scaling_setspeed.attr,
 #if defined(CONFIG_CPU_VOLTAGE_CONTROL)
 	&UV_mV_table.attr,
+	&UV_uV_table.attr,
 #endif
 #if defined(CONFIG_MACH_U1)
 	&asv_group.attr,

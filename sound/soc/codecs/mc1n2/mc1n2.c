@@ -52,10 +52,6 @@
 #include "mc1n2_cfg_lgt.h"
 #elif defined(CONFIG_MACH_PX)
 #include "mc1n2_cfg_px.h"
-#elif defined(CONFIG_TARGET_LOCALE_NA)
-#include "mcresctrl.h"
-#include "mcdefs.h"
-#include "mc1n2_cfg_SPR.h"
 #else
 #include "mc1n2_cfg.h"
 #endif
@@ -1673,6 +1669,7 @@ static int write_reg_vol(struct snd_soc_codec *codec,
 			}
 #endif /* CONFIG_SND_TWEAK_HW_VOLUME */
 			db = mc1n2_vreg_map[reg].volmap[vol];
+			//printk(KERN_DEBUG "[MCDRV] update_reg_vol name=%s : volindex=%d, db=%d", vol_name_tbl[reg], vol, db);
 			*vp = db | MCDRV_VOL_UPDATE;
 		}
 	}
@@ -3962,17 +3959,6 @@ static int mc1n2_hwdep_ioctl_set_ctrl(struct snd_soc_codec *codec,
 		args->dPrm &= ~(MCDRV_DIO2_COM_UPDATE_FLAG | MCDRV_DIO2_DIR_UPDATE_FLAG | MCDRV_DIO2_DIT_UPDATE_FLAG);
 #endif
 	}
-
-#ifdef CONFIG_TARGET_LOCALE_NA
-	if (args->dCmd == MCDRV_SET_AUDIOENGINE) {
-		MCDRV_AE_INFO  sAeInfo;
-		UINT8  bReg;
-
-		McResCtrl_GetAeInfo(&sAeInfo);
-		bReg = McResCtrl_GetRegVal(MCDRV_PACKET_REGTYPE_A,
-				MCI_BDSP_ST);
-	}
-#endif
 
 	err = _McDrv_Ctrl(args->dCmd, info, args->dPrm);
 

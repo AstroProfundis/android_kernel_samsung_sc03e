@@ -18,6 +18,11 @@ endif
 
 AFLAGS_head.o := -DTEXT_OFFSET=$(TEXT_OFFSET)
 AFLAGS_head.o += -Wa,-march=armv7-a$(plus_sec)
+# change@wtl.rsengott
+# FIPS_KERNEL_RAM_BASE is start of kernel text in RAM
+ifeq ($(CONFIG_CRYPTO_FIPS),y)
+AFLAGS_head.o += -DFIPS_KERNEL_RAM_BASE=0x40008000
+endif
 HEAD = head.o
 
 AFLAGS_misc.o +=-Wa,-march=armv7-a$(plus_sec)

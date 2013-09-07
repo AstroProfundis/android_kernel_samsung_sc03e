@@ -26,6 +26,9 @@
 
 #define CPU_UV_MV_MAX 1500000
 #define CPU_UV_MV_MIN 800000
+#if defined(CONFIG_CPU_EXYNOS4212) || defined(CONFIG_CPU_EXYNOS4412)
+#define CPUFREQ_LEVEL_END		(L16 + 1)
+#endif
 
 /*********************************************************************
  *                     CPUFREQ NOTIFIER INTERFACE                    *
@@ -352,6 +355,9 @@ static inline int cpufreq_ondemand_flexrate_request(unsigned int rate_ms,
 }
 #endif
 
+#ifdef CONFIG_CPU_FREQ_LCD_FREQ_DFS
+extern int _lcdfreq_lock(int lock);
+#endif
 
 /*********************************************************************
  *                       CPUFREQ DEFAULT GOVERNOR                    *
