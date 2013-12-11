@@ -2963,7 +2963,8 @@ static int cpufreq_governor_dbs(struct cpufreq_policy *policy,
 	unsigned int j;
 	int rc;
 	int i=0;
-	int calc_index=0;	
+	int calc_index=0;
+
 	this_dbs_info = &per_cpu(cs_cpu_dbs_info, cpu);
 
 	table = cpufreq_frequency_get_table(0); // Yank : Get system frequency table
