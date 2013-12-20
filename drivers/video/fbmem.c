@@ -1382,7 +1382,7 @@ fb_mmap(struct file *file, struct vm_area_struct * vma)
 	 * if pgoff points past it, the mmio mapping.
 	 */
 	start = info->fix.smem_start;
-	len = PAGE_ALIGN((start & ~PAGE_MASK) + info->fix.smem_len);
+	len = info->fix.smem_len;
 
 #if defined(CONFIG_CPU_EXYNOS4212) || defined(CONFIG_CPU_EXYNOS4412)
 	if (!cma_is_registered_region(start, len)) {
@@ -1394,13 +1394,9 @@ fb_mmap(struct file *file, struct vm_area_struct * vma)
 	}
 #endif
 
-	if (off >= len) {
-		/* memory mapped io */
-		off -= len;
-		if (info->var.accel_flags) {
-			mutex_unlock(&info->mm_lock);
-			return -EINVAL;
-		}
+	mmio_pgoff = PAGE_ALIGN((start & ~PAGE_MASK) + len) >> PAGE_SHIFT;
+	if (vma->vm_pgoff >= mmio_pgoff) {
+		vma->vm_pgoff -= mmio_pgoff;
 		start = info->fix.mmio_start;
 		len = info->fix.mmio_len;
 	}
