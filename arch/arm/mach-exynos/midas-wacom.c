@@ -33,7 +33,9 @@ static int wacom_early_suspend_hw(void)
 {
 #ifndef CONFIG_MACH_KONA
 	gpio_set_value(GPIO_PEN_RESET_N, 0);
-#if defined(CONFIG_MACH_T0_EUR_OPEN) || defined(CONFIG_MACH_T0_CHN_OPEN)
+#endif
+
+#if defined(CONFIG_MACH_T0_EUR_OPEN)
 	if (system_rev >= 10)
 		gpio_direction_output(GPIO_WACOM_LDO_EN, 0);
 	else

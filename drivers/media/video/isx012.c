@@ -3177,12 +3177,12 @@ static int isx012_s_mbus_fmt(struct v4l2_subdev *sd,
 
 		/* for maket app.
 		 * Samsung camera app does not use unmatched ratio.*/
-<<<<<<< HEAD
-		if (unlikely(FRM_RATIO(state->preview.frmsize)
+		if (unlikely(NULL == state->preview.frmsize)) {
+			cam_warn("warning, capture without preview resolution\n");
+		} else if (unlikely(FRM_RATIO(state->preview.frmsize)
 		    != FRM_RATIO(state->capture.frmsize))) {
-			cam_warn("%s: warning, capture ratio " \
-				"is different with preview ratio\n",
-				__func__);
+			cam_warn("warning, capture ratio " \
+				"is different with preview ratio\n");
 		}
 	}
 
