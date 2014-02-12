@@ -50,6 +50,10 @@ static struct gpio_init_data kona_init_gpios[] = {
 	{EXYNOS4_GPA1(1), S3C_GPIO_INPUT, S3C_GPIO_SETPIN_NONE,
 		S3C_GPIO_PULL_DOWN, S5P_GPIO_DRVSTR_LV1},
 #endif
+/*
+   temporarily disabled set GPA0(4) ~ GPA0(7) to support UART1 as serial
+   need to be checked by IF team
+*/
 
 	{EXYNOS4_GPD0(2), S3C_GPIO_INPUT, S3C_GPIO_SETPIN_NONE,
 		S3C_GPIO_PULL_NONE, S5P_GPIO_DRVSTR_LV1},

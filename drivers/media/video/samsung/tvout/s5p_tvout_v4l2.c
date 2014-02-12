@@ -1176,6 +1176,19 @@ static int s5p_tvout_vo_s_fmt_type_private(
 				(u32) vparam.base_y, (u32) vparam.base_c,
 				pix_fmt->width, pix_fmt->height, color, field);
 		} else {
+			if (pix_fmt->pixelformat ==
+				V4L2_PIX_FMT_NV12T
+				|| pix_fmt->pixelformat == V4L2_PIX_FMT_NV21T) {
+				y_size = ALIGN(ALIGN(pix_fmt->width, 128) *
+					ALIGN(pix_fmt->height, 32), SZ_8K);
+				cbcr_size = ALIGN(ALIGN(pix_fmt->width, 128) *
+					ALIGN(pix_fmt->height >> 1, 32), SZ_8K);
+			} else {
+				y_size = pix_fmt->width * pix_fmt->height;
+				cbcr_size =
+					pix_fmt->width * (pix_fmt->height >> 1);
+			}
+
 			src_vir_y_addr = (unsigned int)phys_to_virt(
 				(unsigned long)vparam.base_y);
 			src_vir_cb_addr = (unsigned int)phys_to_virt(

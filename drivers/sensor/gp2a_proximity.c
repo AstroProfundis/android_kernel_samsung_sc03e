@@ -47,6 +47,8 @@
 #define	VENDOR		"SHARP"
 #define	CHIP_ID		"GP2AP"
 
+#define OFFSET_FILE_PATH "/efs/prox_cal"
+
 #if 1
 #define gprintk(fmt, x...) printk(KERN_INFO "%s(%d): "\
 fmt, __func__ , __LINE__, ## x)
@@ -68,7 +70,11 @@ fmt, __func__ , __LINE__, ## x)
 #else
 #define DEFAULT_THRESHOLD_DIFF	1
 #endif
+#if defined(CONFIG_MACH_BAFFIN)
+#define PROX_READ_NUM	20
+#else
 #define PROX_READ_NUM	40
+#endif
 
 #define PS_LOW_THD_L		0x08
 #define PS_LOW_THD_H		0x09
@@ -125,7 +131,8 @@ static u8 gp2a_original_image_030a[COL][2] = {
 	/*	{0x05 , 0x00}, */
 	/*	{0x06 , 0xFF}, */
 	/*	{0x07 , 0xFF}, */
-#if defined(CONFIG_MACH_KONA_SENSOR)
+<<<<<<< HEAD
+#if defined(CONFIG_MACH_KONA_SENSOR || CONFIG_MACH_BAFFIN)
 	{0x08, 0x08},	/*PS mode LTH(Loff):  (??mm) */
 #else
 	{0x08, 0x09},	/*PS mode LTH(Loff):  (??mm) */
@@ -179,9 +186,11 @@ int is_gp2a030a(void)
 #endif
 #if defined(CONFIG_MACH_M3_USA_TMO) || \
 	defined(CONFIG_MACH_BAFFIN) || \
-	defined(CONFIG_MACH_KONA_SENSOR) ||\
-	defined(CONFIG_MACH_TAB3) ||\
-	defined(CONFIG_MACH_GC2PD)
+	defined(CONFIG_MACH_KONA_SENSOR) || \
+	defined(CONFIG_MACH_TAB3) || \
+	defined(CONFIG_MACH_GC2PD) || \
+	defined(CONFIG_MACH_M3) || \
+	defined(CONFIG_MACH_BAFFIN)
 	return 1;
 #endif
 #if defined(CONFIG_MACH_REDWOOD)
@@ -241,13 +250,237 @@ static int gp2a_update_threshold(struct gp2a_data *data,
 			pr_err("%s : setting error i = %d, err=%d\n",
 			 __func__, i, err);
 			return err;
-		} else {
+		} else
 			selected_image[i][1] = set_value;
-		}
 	}
 
 	return err;
 }
+
+static int proximity_adc_read(struct gp2a_data *data)
+{
+	int sum[OFFSET_ARRAY_LENGTH];
+	int i = OFFSET_ARRAY_LENGTH-1;
+	int avg;
+	int min;
+	int max;
+	int total;
+	int D2_data;
+	unsigned char get_D2_data[2];
+
+	mutex_lock(&data->data_mutex);
+	do {
+		msleep(50);
+		opt_i2c_read(DATA2_LSB, get_D2_data, sizeof(get_D2_data));
+		D2_data = (get_D2_data[1] << 8) | get_D2_data[0];
+		sum[i] = D2_data;
+		if (i == 0) {
+			min = sum[i];
+			max = sum[i];
+		} else {
+			if (sum[i] < min)
+				min = sum[i];
+			else if (sum[i] > max)
+				max = sum[i];
+		}
+		total += sum[i];
+	} while (i--);
+	mutex_unlock(&data->data_mutex);
+
+	total -= (min + max);
+	avg = (int)(total / (OFFSET_ARRAY_LENGTH - 2));
+	pr_info("%s: offset = %d\n", __func__, avg);
+
+	return avg;
+}
+
+
+static int proximity_open_calibration(struct gp2a_data  *data)
+{
+	struct file *cal_filp = NULL;
+	int err = 0;
+	mm_segment_t old_fs;
+
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+
+	cal_filp = filp_open(OFFSET_FILE_PATH,
+		O_RDONLY, S_IRUGO | S_IWUSR | S_IWGRP);
+
+	if (IS_ERR(cal_filp)) {
+		pr_err("%s: Can't open calibration file\n", __func__);
+		set_fs(old_fs);
+		err = PTR_ERR(cal_filp);
+		goto done;
+	}
+
+	err = cal_filp->f_op->read(cal_filp,
+		(char *)&data->offset_value,
+			sizeof(int), &cal_filp->f_pos);
+	if (err != sizeof(int)) {
+		pr_err("%s: Can't read the cal data from file\n", __func__);
+		err = -EIO;
+	}
+
+	pr_info("%s: (%d)\n", __func__,
+		data->offset_value);
+
+	filp_close(cal_filp, current->files);
+done:
+	set_fs(old_fs);
+	return err;
+}
+
+static int proximity_do_calibrate(struct gp2a_data  *data,
+			bool do_calib, bool thresh_set)
+{
+	struct file *cal_filp;
+	int err;
+	int xtalk_avg = 0;
+	int offset_change = 0;
+	uint16_t thrd = 0;
+	u8 reg;
+	mm_segment_t old_fs;
+
+	u8 (*cal_image)[2] = (is_gp2a030a() ?
+			gp2a_original_image_030a : gp2a_original_image);
+
+	if (do_calib) {
+		if (thresh_set) {
+			/* for proximity_thresh_store */
+			data->offset_value =
+				data->threshold_high -
+				(cal_image[6][1] << 8 | cal_image[5][1]);
+		} else {
+			/* tap offset button */
+			/* get offset value */
+			xtalk_avg = proximity_adc_read(data);
+			offset_change =
+				(cal_image[6][1] << 8 | cal_image[5][1])
+				- DEFAULT_HI_THR;
+			if (xtalk_avg < offset_change) {
+				/* do not need calibration */
+				data->cal_result = 0;
+				err = 0;
+				goto no_cal;
+			}
+			data->offset_value = xtalk_avg - offset_change;
+		}
+		/* update threshold */
+		thrd = (cal_image[4][1] << 8 | cal_image[3][1])
+			+ (data->offset_value);
+		THR_REG_LSB(thrd, reg);
+		opt_i2c_write(cal_image[3][0], &reg);
+		THR_REG_MSB(thrd, reg);
+		opt_i2c_write(cal_image[4][0], &reg);
+
+		thrd = (cal_image[4][1] << 8 | cal_image[5][1])
+			+(data->offset_value);
+		THR_REG_LSB(thrd, reg);
+		opt_i2c_write(cal_image[5][0], &reg);
+		THR_REG_MSB(thrd, reg);
+		opt_i2c_write(cal_image[6][0], &reg);
+
+		/* calibration result */
+		if (!thresh_set)
+			data->cal_result = 1;
+	} else {
+		/* tap reset button */
+		data->offset_value = 0;
+		/* update threshold */
+		opt_i2c_write(cal_image[3][0], &cal_image[3][1]);
+		opt_i2c_write(cal_image[4][0], &cal_image[4][1]);
+		opt_i2c_write(cal_image[5][0], &cal_image[5][1]);
+		opt_i2c_write(cal_image[6][0], &cal_image[6][1]);
+		/* calibration result */
+		data->cal_result = 2;
+	}
+
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+
+	cal_filp = filp_open(OFFSET_FILE_PATH,
+			O_CREAT | O_TRUNC | O_WRONLY,
+			S_IRUGO | S_IWUSR | S_IWGRP);
+
+	if (IS_ERR(cal_filp)) {
+		pr_err("%s: Can't open calibration file\n", __func__);
+		set_fs(old_fs);
+		err = PTR_ERR(cal_filp);
+		goto done;
+	}
+
+	err = cal_filp->f_op->write(cal_filp,
+		(char *)&data->offset_value, sizeof(int),
+			&cal_filp->f_pos);
+	if (err != sizeof(int)) {
+		pr_err("%s: Can't write the cal data to file\n", __func__);
+		err = -EIO;
+	}
+
+	filp_close(cal_filp, current->files);
+done:
+	set_fs(old_fs);
+no_cal:
+	return err;
+}
+
+static int proximity_manual_offset(struct gp2a_data  *data, u8 change_on)
+{
+	struct file *cal_filp;
+	int err;
+	int16_t thrd;
+	u8 reg;
+	mm_segment_t old_fs;
+
+	u8 (*manual_image)[2] = (is_gp2a030a() ?
+			gp2a_original_image_030a : gp2a_original_image);
+
+	data->offset_value = change_on;
+	/* update threshold */
+	thrd = manual_image[3][1]+(data->offset_value);
+	THR_REG_LSB(thrd, reg);
+	opt_i2c_write(manual_image[3][0], &reg);
+	THR_REG_MSB(thrd, reg);
+	opt_i2c_write(manual_image[4][0], &reg);
+
+	thrd = manual_image[5][1]+(data->offset_value);
+	THR_REG_LSB(thrd, reg);
+	opt_i2c_write(manual_image[5][0], &reg);
+	THR_REG_MSB(thrd, reg);
+	opt_i2c_write(manual_image[6][0], &reg);
+
+	/* calibration result */
+	data->cal_result = 1;
+
+	old_fs = get_fs();
+	set_fs(KERNEL_DS);
+
+	cal_filp = filp_open(OFFSET_FILE_PATH,
+			O_CREAT | O_TRUNC | O_WRONLY,
+			S_IRUGO | S_IWUSR | S_IWGRP);
+
+	if (IS_ERR(cal_filp)) {
+		pr_err("%s: Can't open calibration file\n", __func__);
+		set_fs(old_fs);
+		err = PTR_ERR(cal_filp);
+		goto done;
+	}
+
+	err = cal_filp->f_op->write(cal_filp,
+		(char *)&data->offset_value, sizeof(int),
+			&cal_filp->f_pos);
+	if (err != sizeof(int)) {
+		pr_err("%s: Can't write the cal data to file\n", __func__);
+		err = -EIO;
+	}
+
+	filp_close(cal_filp, current->files);
+done:
+	set_fs(old_fs);
+	return err;
+}
+
 
 /* Proximity Sysfs interface */
 static ssize_t
@@ -339,6 +572,7 @@ proximity_enable_store(struct device *dev,
 
 		enable_irq(data->irq);
 	}
+	data->enabled = value;
 
 	return count;
 }
@@ -347,6 +581,8 @@ static ssize_t proximity_state_show(struct device *dev,
 				    struct device_attribute *attr, char *buf)
 {
 	struct gp2a_data *data = dev_get_drvdata(dev);
+	static int count;		/*count for proximity average */
+
 	int D2_data = 0;
 	unsigned char get_D2_data[2] = { 0, };
 
@@ -750,6 +986,7 @@ static ssize_t proximity_raw_data_show(struct device *dev,
 	unsigned char get_D2_data[2] = { 0, };
 	struct gp2a_data *data = dev_get_drvdata(dev);
 
+	msleep(20);
 	mutex_lock(&data->data_mutex);
 	opt_i2c_read(0x10, get_D2_data, sizeof(get_D2_data));
 	mutex_unlock(&data->data_mutex);
@@ -1050,6 +1287,13 @@ static int gp2a_opt_probe(struct platform_device *pdev)
 #if !defined(CONFIG_MACH_TAB3) || !defined(CONFIG_MACH_GC2PD)
 	pdata->gp2a_led_on(true);
 #endif
+
+	if (pdata->gp2a_get_threshold) {
+		gp2a_update_threshold(is_gp2a030a() ?
+			gp2a_original_image_030a : gp2a_original_image,
+			pdata->gp2a_get_threshold(), false);
+	}
+
 	/* allocate driver_data */
 	gp2a = kzalloc(sizeof(struct gp2a_data), GFP_KERNEL);
 	if (!gp2a) {
@@ -1347,7 +1591,6 @@ static int gp2a_opt_resume(struct platform_device *pdev)
 	gprintk("\n");
 
 	if (gp2a->enabled) {
-
 		if (device_may_wakeup(&pdev->dev))
 			enable_irq_wake(gp2a->irq);
 	}

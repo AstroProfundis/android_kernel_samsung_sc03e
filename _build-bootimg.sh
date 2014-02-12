@@ -94,6 +94,14 @@ else
   find -name '*.ko' -exec cp -av {} $RAMDISK_TMP_DIR/lib/modules/ \;
   STRIP=strip
   $CROSS_COMPILE$STRIP --strip-unneeded $RAMDISK_TMP_DIR/lib/modules/*
+  mkdir -p release-tools/common/lib/modules
+  cp -arf out/SC03E/$BUILD_TARGET/obj/drivers/scsi/scsi_wait_scan.ko release-tools/common/lib/modules/
+  cp -arf out/SC03E/$BUILD_TARGET/obj/drivers/net/wireless/bcmdhd/dhd.ko release-tools/common/lib/modules/
+  cp -arf out/SC03E/$BUILD_TARGET/obj/drivers/net/wireless/btlock/btlock.ko release-tools/common/lib/modules/
+  cp -arf out/SC03E/$BUILD_TARGET/obj/arch/arm/mvp/pvtcpkm/pvtcpkm.ko release-tools/common/lib/modules/
+  cp -arf out/SC03E/$BUILD_TARGET/obj/arch/arm/mvp/commkm/commkm.ko release-tools/common/lib/modules/
+  cp -arf out/SC03E/$BUILD_TARGET/obj/arch/arm/mvp/mvpkm/mvpkm.ko release-tools/common/lib/modules/
+  ${CROSS_COMPILE}strip --strip-unneeded release-tools/common/lib/modules/*
 fi
 
 if [ "$USE_INITRAMFS" = 'y' ]; then

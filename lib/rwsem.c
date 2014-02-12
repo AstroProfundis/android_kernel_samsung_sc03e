@@ -2,6 +2,8 @@
  *
  * Written by David Howells (dhowells@redhat.com).
  * Derived from arch/i386/kernel/semaphore.c
+ *
+ * Steal writing sem. Alex Shi <alex.shi@intel.com>
  */
 #include <linux/rwsem.h>
 #include <linux/sched.h>
@@ -157,12 +159,40 @@ __rwsem_do_wake(struct rw_semaphore *sem, int wake_type)
 
  out:
 	return sem;
+}
 
-	/* undo the change to the active count, but check for a transition
-	 * 1->0 */
- undo_write:
+/* try to get write sem,  caller hold sem->wait_lock */
+static int try_get_writer_sem(struct rw_semaphore *sem,
+					struct rwsem_waiter *waiter)
+{
+	struct rwsem_waiter *fwaiter;
+	long oldcount, adjustment;
+
+	/* only steal when first waiter is writing */
+	fwaiter = list_entry(sem->wait_list.next, struct rwsem_waiter, list);
+	if (!(fwaiter->flags & RWSEM_WAITING_FOR_WRITE))
+		return 0;
+
+	adjustment = RWSEM_ACTIVE_WRITE_BIAS;
+	/* only one waiter in queue */
+	if (fwaiter == waiter && waiter->list.next == &sem->wait_list)
+		adjustment -= RWSEM_WAITING_BIAS;
+
+try_again_write:
+	oldcount = rwsem_atomic_update(adjustment, sem) - adjustment;
+	if (!(oldcount & RWSEM_ACTIVE_MASK)) {
+		/* no active lock */
+		struct task_struct *tsk = waiter->task;
+
+		list_del(&waiter->list);
+		smp_mb();
+		put_task_struct(tsk);
+		tsk->state = TASK_RUNNING;
+		return 1;
+	}
+	/* some one grabbed the sem already */
 	if (rwsem_atomic_update(-adjustment, sem) & RWSEM_ACTIVE_MASK)
-		goto out;
+		return 0;
 	goto try_again_write;
 }
 
@@ -210,6 +240,15 @@ rwsem_down_failed_common(struct rw_semaphore *sem,
 	for (;;) {
 		if (!waiter.task)
 			break;
+
+		spin_lock_irq(&sem->wait_lock);
+		/* try to get the writer sem, may steal from the head writer */
+		if (flags == RWSEM_WAITING_FOR_WRITE)
+			if (try_get_writer_sem(sem, &waiter)) {
+				spin_unlock_irq(&sem->wait_lock);
+				return sem;
+			}
+		spin_unlock_irq(&sem->wait_lock);
 		schedule();
 		set_task_state(tsk, TASK_UNINTERRUPTIBLE);
 	}
