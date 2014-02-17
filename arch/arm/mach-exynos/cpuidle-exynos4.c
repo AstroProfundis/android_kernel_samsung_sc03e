@@ -448,11 +448,6 @@ static int exynos4_check_operation(void)
 		return 1;
 #endif
 
-#if defined(CONFIG_ISDBT)
-	if (check_isdbt_op())
-		return 1;
-#endif
-
 #if defined(CONFIG_BT)
 	if (check_bt_op())
 		return 1;

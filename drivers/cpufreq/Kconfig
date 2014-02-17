@@ -185,6 +185,14 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASS2
 	help
           Use the CPUFreq governor 'smartassV2' as default.
 
+config CPU_FREQ_DEFAULT_GOV_PEGASUSQPLUS
+	bool "pegasusqplus"
+	select CPU_FREQ_GOV_PEGASUSQPLUS
+
+config CPU_FREQ_DEFAULT_GOV_YANKASUSQ
+	bool "yankasusq"
+	select CPU_FREQ_GOV_YANKASUSQ
+	
 endchoice
 
 config CPU_FREQ_GOV_PERFORMANCE
@@ -371,9 +379,6 @@ config CPU_FREQ_GOV_ADAPTIVE
 config CPU_FREQ_GOV_PEGASUSQ
 	tristate "'pegasusq' cpufreq policy governor"
 
-config CPU_FREQ_GOV_SLP
-	tristate "'slp' cpufreq policy governor"
-
 config CPU_FREQ_GOV_SMARTASS2
 	tristate "'smartassV2' cpufreq governor"
 	depends on CPU_FREQ
@@ -408,6 +413,14 @@ config CPU_FREQ_GOV_SAKURACTIVE
          'ondemand' instead.
 
          If in doubt, say N.
+
+config CPU_FREQ_GOV_YANKASUSQ
+	tristate "'yankasusq' cpufreq policy governor"
+	help
+	  based on PegasusQ - This driver is work in progress
+
+config CPU_FREQ_GOV_SLP
+        tristate "'slp' cpufreq policy governor"
 
 config SLP_CHECK_CPU_LOAD
         bool "check load and frequency of cpu"

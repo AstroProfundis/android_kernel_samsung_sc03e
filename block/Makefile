@@ -16,7 +16,12 @@ obj-$(CONFIG_IOSCHED_CFQ)	+= cfq-iosched.o
 obj-$(CONFIG_IOSCHED_ROW)	+= row-iosched.o
 obj-$(CONFIG_IOSCHED_BFQ)  	+= bfq-iosched.o
 obj-$(CONFIG_IOSCHED_SIO)	+= sio-iosched.o
+<<<<<<< HEAD
 obj-$(CONFIG_IOSCHED_VR)	+= vr-iosched.o
+=======
+obj-$(CONFIG_IOSCHED_VR)    += vr-iosched.o
+obj-$(CONFIG_IOSCHED_ZEN)	+= zen-iosched.o
+>>>>>>> mokee/kk_mkt
 
 obj-$(CONFIG_BLOCK_COMPAT)	+= compat_ioctl.o
 obj-$(CONFIG_BLK_DEV_INTEGRITY)	+= blk-integrity.o

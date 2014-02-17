@@ -45,7 +45,7 @@ struct cpufreq_clkdiv {
 	unsigned int	clkdiv1;
 };
 
-unsigned int exynos4x12_volt_table[CPUFREQ_LEVEL_END];
+static unsigned int exynos4x12_volt_table[CPUFREQ_LEVEL_END];
 
 static struct cpufreq_frequency_table exynos4x12_freq_table[] = {
 	{L0, 2000*1000},
@@ -518,7 +518,11 @@ static void exynos4x12_set_frequency(unsigned int old_index,
 				need_dynamic_ema)
 				__raw_writel(0x101, EXYNOS4_EMA_CONF);
 #ifndef CONFIG_ABB_CONTROL
-		if ((samsung_rev() >= EXYNOS4412_REV_2_0)
+		if ((soc_is_exynos4212())
+			&& (exynos_result_of_asv > 3)
+			&& (old_index > L7) && (new_index <= L7)) {
+			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_130V);
+		} else if ((samsung_rev() >= EXYNOS4412_REV_2_0)
 			&& (exynos_result_of_asv > 2)
 			&& (old_index > L10) && (new_index <= L10)) {
 			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_130V);
@@ -560,7 +564,11 @@ static void exynos4x12_set_frequency(unsigned int old_index,
 			set_clkdiv(new_index);
 		}
 #ifndef CONFIG_ABB_CONTROL
-		if ((samsung_rev() >= EXYNOS4412_REV_2_0)
+		if ((soc_is_exynos4212())
+			&& (exynos_result_of_asv > 3)
+			&& (old_index <= L7) && (new_index > L7)) {
+			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_100V);
+		} else if ((samsung_rev() >= EXYNOS4412_REV_2_0)
 			&& (exynos_result_of_asv > 2)
 			&& (old_index <= L10) && (new_index > L10)) {
 			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_100V);
@@ -586,11 +594,42 @@ static void exynos4x12_set_frequency(unsigned int old_index,
 }
 
 /* Get maximum cpufreq index of chip */
+static unsigned int get_max_cpufreq_idx(void)
+{
+	int index = -EINVAL;
+
+#if defined(CONFIG_EXYNOS4X12_800MHZ_SUPPORT)
+	index = L8;
+#elif defined(CONFIG_EXYNOS4X12_400MHZ_SUPPORT)
+	index = L12;
+#else
+	if (soc_is_exynos4212()) {
+		index = L1;
+	} else if (soc_is_exynos4412()) {
+		/* exynos4x12 prime supports 1.6GHz */
+		if (samsung_rev() >= EXYNOS4412_REV_2_0)
+			index = L0;
+		else {
+		/* exynos4x12 supports only 1.4GHz and 1.1GHz */
+			if (exynos_armclk_max != 1400000)
+				index = L6;
+			else
+			index = L0; /* Allow the full use of the freq. table (max. 1.6GHz) */
+		}
+	}
+#endif
+
+	return index;
+}
+
 static void __init set_volt_table(void)
 {
 	unsigned int i;
 
-	max_support_idx = L0;
+	max_support_idx = get_max_cpufreq_idx();
+
+	for (i = 0; i < max_support_idx; i++)
+		exynos4x12_freq_table[i].frequency = CPUFREQ_ENTRY_INVALID;
 
 	pr_info("DVFS : VDD_ARM Voltage table set with %d Group\n", exynos_result_of_asv);
 
@@ -608,6 +647,50 @@ static void __init set_volt_table(void)
 					asv_voltage_step_12_5[i][exynos_result_of_asv];
 		} else {
 			pr_err("%s: Can't find SoC type \n", __func__);
+		}
+	}
+
+	if (soc_is_exynos4212() ||
+		(soc_is_exynos4412() && (samsung_rev() >= EXYNOS4412_REV_2_0))) {
+		tmp = (is_special_flag() >> ARM_LOCK_FLAG) & 0x3;
+
+		if (tmp) {
+			pr_info("%s : special flag[%d]\n", __func__, tmp);
+			switch (tmp) {
+			case 1:
+				if (soc_is_exynos4212())
+					i = L13; 	/* 700MHz fixed volt */
+				else
+					i = L15;	/* 500MHz fixed volt */
+				break;
+			case 2:
+				if (soc_is_exynos4212())
+					i = L12; 	/* 800MHz fixed volt */
+				else
+					i = L13; 	/* 700MHz fixed volt */
+				break;
+			case 3:
+				if (soc_is_exynos4212())
+					i = L11; 	/* 900MHz fixed volt */
+				else
+					i = L12; 	/* 800MHz fixed volt */
+				break;
+			default:
+				break;
+			}
+
+			pr_info("ARM voltage locking at L%d\n", i);
+
+			for (tmp = (i + 1) ; tmp < CPUFREQ_LEVEL_END ; tmp++) {
+				exynos4x12_volt_table[tmp] =
+					exynos4x12_volt_table[i];
+				pr_info("CPUFREQ: L%d : %d\n", tmp, exynos4x12_volt_table[tmp]);
+			}
+		}
+
+		if (exynos_dynamic_ema) {
+			need_dynamic_ema = true;
+			pr_info("%s: Dynamic EMA is enabled\n", __func__);
 		}
 	}
 }
@@ -729,7 +812,14 @@ int exynos4x12_cpufreq_init(struct exynos_dvfs_info *info)
 	pr_info("Bootup CPU Frequency = [%d] %dMHz\n", info->pm_lock_idx,
 		rate / 1000);
 #else
-	info->pm_lock_idx = L10;
+
+#if defined(CONFIG_EXYNOS4X12_800MHZ_SUPPORT)
+	info->pm_lock_idx = L12;
+#elif defined(CONFIG_EXYNOS4X12_400MHZ_SUPPORT)
+	info->pm_lock_idx = L14;
+#else
+	info->pm_lock_idx = L12;
+#endif
 #endif
 	/*
 	 * ARM clock source will be changed APLL to MPLL temporary

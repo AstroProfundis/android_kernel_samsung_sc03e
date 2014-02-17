@@ -77,7 +77,10 @@ enum busfreq_level_idx {
 	LV_END
 };
 
-static struct busfreq_table *exynos4_busfreq_table;
+#ifndef CONFIG_ABB_CONTROL
+static
+#endif
+struct busfreq_table *exynos4_busfreq_table;
 
 static struct busfreq_table exynos4_busfreq_table_orig[] = {
 	{LV_0, 400266, 1100000, 0, 0, 0}, /* MIF : 400MHz INT : 200MHz */

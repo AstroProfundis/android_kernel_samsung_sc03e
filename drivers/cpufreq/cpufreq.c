@@ -608,6 +608,24 @@ static ssize_t show_scaling_setspeed(struct cpufreq_policy *policy, char *buf)
 	return policy->governor->show_setspeed(policy, buf);
 }
 
+<<<<<<< HEAD
+=======
+extern ssize_t store_UV_mV_table(struct cpufreq_policy *policy,
+				 const char *buf, size_t count);
+
+extern ssize_t store_UV_uV_table(struct cpufreq_policy *policy,
+				 const char *buf, size_t count);
+
+extern ssize_t show_UV_mV_table(struct cpufreq_policy *policy, char *buf);
+
+extern ssize_t show_UV_uV_table(struct cpufreq_policy *policy, char *buf);
+
+/* sysfs interface for ASV level */
+extern ssize_t show_asv_level(struct cpufreq_policy *policy, char *buf);
+extern ssize_t store_asv_level(struct cpufreq_policy *policy,
+                                      const char *buf, size_t count);
+
+>>>>>>> mokee/kk_mkt
 /**
  * show_scaling_driver - show the current cpufreq HW/BIOS limitation
  */
@@ -638,6 +656,13 @@ cpufreq_freq_attr_rw(scaling_min_freq);
 cpufreq_freq_attr_rw(scaling_max_freq);
 cpufreq_freq_attr_rw(scaling_governor);
 cpufreq_freq_attr_rw(scaling_setspeed);
+<<<<<<< HEAD
+=======
+cpufreq_freq_attr_rw(UV_mV_table);
+cpufreq_freq_attr_rw(UV_uV_table);
+/* ASV level */
+cpufreq_freq_attr_rw(asv_level);
+>>>>>>> mokee/kk_mkt
 
 static struct attribute *default_attrs[] = {
 	&cpuinfo_min_freq.attr,
@@ -652,6 +677,12 @@ static struct attribute *default_attrs[] = {
 	&scaling_available_governors.attr,
 	&cpufreq_freq_attr_scaling_available_freqs.attr,
 	&scaling_setspeed.attr,
+<<<<<<< HEAD
+=======
+	&UV_mV_table.attr,
+	&UV_uV_table.attr,
+	&asv_level.attr,
+>>>>>>> mokee/kk_mkt
 	NULL
 };
 
