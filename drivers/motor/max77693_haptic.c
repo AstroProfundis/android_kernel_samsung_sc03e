@@ -304,24 +304,6 @@ ssize_t pwm_value_store(struct device *dev,
 static DEVICE_ATTR(pwm_value, S_IRUGO | S_IWUSR,
 		pwm_value_show, pwm_value_store);
 
-static int create_vibrator_sysfs(void)
-{
-	int ret;
-	struct kobject *vibrator_kobj;
-	vibrator_kobj = kobject_create_and_add("vibrator", NULL);
-	if (unlikely(!vibrator_kobj))
-		return -ENOMEM;
-
-	ret = sysfs_create_file(vibrator_kobj,
-			&dev_attr_pwm_val.attr);
-	if (unlikely(ret < 0)) {
-		pr_err("[VIB] sysfs_create_file failed: %d\n", ret);
-		return ret;
-	}
-
-	return 0;
-}
-
 static int max77693_haptic_probe(struct platform_device *pdev)
 {
 	int error = 0;
@@ -383,8 +365,6 @@ static int max77693_haptic_probe(struct platform_device *pdev)
 	hap_data->tout_dev.name = "vibrator";
 	hap_data->tout_dev.get_time = haptic_get_time;
 	hap_data->tout_dev.enable = haptic_enable;
-
-	create_vibrator_sysfs();
 
 #ifdef CONFIG_ANDROID_TIMED_OUTPUT
 	error = timed_output_dev_register(&hap_data->tout_dev);

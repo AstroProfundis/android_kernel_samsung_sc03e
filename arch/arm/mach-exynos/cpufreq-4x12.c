@@ -624,7 +624,7 @@ static unsigned int get_max_cpufreq_idx(void)
 
 static void __init set_volt_table(void)
 {
-	unsigned int i;
+	unsigned int i, tmp;
 
 	max_support_idx = get_max_cpufreq_idx();
 
