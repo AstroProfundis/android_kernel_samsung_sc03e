@@ -25,7 +25,7 @@
 #include <plat/clock.h>
 #include <plat/cpu.h>
 
-#define CPUFREQ_LEVEL_END	(L16 + 1)
+#define CPUFREQ_LEVEL_END	(L18 + 1)
 
 #undef PRINT_DIV_VAL
 
@@ -524,7 +524,7 @@ static void exynos4x12_set_frequency(unsigned int old_index,
 			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_130V);
 		} else if ((samsung_rev() >= EXYNOS4412_REV_2_0)
 			&& (exynos_result_of_asv > 2)
-			&& (old_index > L10) && (new_index <= L10)) {
+			&& (old_index > L11) && (new_index <= L11)) {
 			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_130V);
 		}
 #else
@@ -570,7 +570,7 @@ static void exynos4x12_set_frequency(unsigned int old_index,
 			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_100V);
 		} else if ((samsung_rev() >= EXYNOS4412_REV_2_0)
 			&& (exynos_result_of_asv > 2)
-			&& (old_index <= L10) && (new_index > L10)) {
+			&& (old_index <= L11) && (new_index > L11)) {
 			exynos4x12_set_abb_member(ABB_ARM, ABB_MODE_100V);
 		}
 #else
@@ -614,7 +614,7 @@ static unsigned int get_max_cpufreq_idx(void)
 			if (exynos_armclk_max != 1400000)
 				index = L6;
 			else
-			index = L0; /* Allow the full use of the freq. table (max. 1.6GHz) */
+			index = L0; /* Allow the full use of the freq. table (max. 2.0GHz) */
 		}
 	}
 #endif
@@ -794,7 +794,8 @@ int exynos4x12_cpufreq_init(struct exynos_dvfs_info *info)
 	info->mpll_freq_khz = rate;
 #ifdef CONFIG_SLP
 	/* S-Boot at 20120406 uses L7 at bootup */
-	/* L7 original / 800MHz is L12 in new table - af */
+	/* L7 original / 800MHz is L10 in new table - af */
+	/* And it's now L12 - AstroProfundis */
 	info->pm_lock_idx = L12;
 
 	/*
@@ -828,7 +829,7 @@ int exynos4x12_cpufreq_init(struct exynos_dvfs_info *info)
 	 * higher than MPLL.
 	 * So, pll_safe_idx set to value based on MPLL clock.(800MHz or 880MHz)
 	 */
-	info->pll_safe_idx = L10;
+	info->pll_safe_idx = L12;
 	info->max_support_idx = max_support_idx;
 	info->min_support_idx = min_support_idx;
 	info->cpu_clk = cpu_clk;
