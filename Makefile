@@ -374,8 +374,9 @@ KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -Werror-implicit-function-declaration \
 		   -Wno-format-security \
 		   -fno-delete-null-pointer-checks \
-		   -mno-unaligned-access \
-		   -Wno-sizeof-pointer-memaccess
+		   -mno-unaligned-access -Wno-sizeof-pointer-memaccess \
+		   -mtune=cortex-a9 -mfpu=neon -munaligned-access
+
 KBUILD_AFLAGS_KERNEL :=
 KBUILD_CFLAGS_KERNEL :=
 KBUILD_AFLAGS   := -D__ASSEMBLY__

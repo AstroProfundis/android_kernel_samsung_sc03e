@@ -127,8 +127,7 @@ static struct mdm_platform_data mdm_platform_data = {
 	.peripheral_platform_device_ohci = &s5p_device_ohci,
 #endif
 	.ramdump_timeout_ms = 120000,
-#if defined(CONFIG_MACH_P4NOTE) && defined(CONFIG_QC_MODEM) \
-	&& defined(CONFIG_SIM_DETECT)
+#if defined(CONFIG_SIM_DETECT)
 	.sim_polarity = 0,
 #endif
 };
