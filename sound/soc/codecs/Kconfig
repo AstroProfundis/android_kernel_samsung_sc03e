@@ -390,14 +390,14 @@ config SND_SOC_WM9090
 
 config SND_BOEFFLA
     bool "Boeffla Sound Engine (AndiP71)"
-    default y
+    default y if SND_SOC_WM8994=y
     depends on SND_SOC_WM8994
     help
           Include the Boeffla Sound Engine by AndiP71
 	
 config SND_WOLFSON_SOUND_CONTROL
 	bool "Sound control based on Boeffla sound"
-	default n
+	default n if SND_SOC_WM8994=y
 	depends on SND_SOC_WM8994
 
 source "sound/soc/codecs/mc1n2/Kconfig"
