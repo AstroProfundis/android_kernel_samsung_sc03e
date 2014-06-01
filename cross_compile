@@ -31,7 +31,7 @@ check_and_get_linaro()
 
     if [ ! -d $TOOLCHAIN_DIR/$COMPILER_ARCH ]; then
         #wget --no-check-certificate https://launchpad.net/linaro-toolchain-binaries/trunk/$COMPILER_VER/+download/gcc-linaro-$COMPILER_ARCH-$TOOLCHAIN_VER-$COMPILER_VER-$COMPILER_REV.tar.bz2
-	wget --no-check-certificate https://releases.linaro.org/13.11/components/android/toolchain/4.7/$COMPILER_ARCH-$TOOLCHAIN_VER-$COMPILER_VER-$COMPILER_REV.tar.bz2
+	wget --no-check-certificate https://releases.linaro.org/14.01/components/android/toolchain/4.7/$COMPILER_ARCH-$TOOLCHAIN_VER-$COMPILER_VER-$COMPILER_REV.tar.bz2
         sudo mkdir -p $TOOLCHAIN_DIR
         sudo tar jxvf $COMPILER_ARCH-$TOOLCHAIN_VER-$COMPILER_VER-$COMPILER_REV.tar.bz2 -C $TOOLCHAIN_DIR
         #rm gcc-linaro-$COMPILER_ARCH-$TOOLCHAIN_VER-$COMPILER_VER-$COMPILER_REV.tar.bz2
@@ -60,7 +60,7 @@ check_and_get_aosp_prebuild()
 # export BUILD_CROSS_COMPILE=`check_and_get_codesourcery arm-none-eabi arm-2013.05 23`
 
 # use linaro compiler
- export BUILD_CROSS_COMPILE=`check_and_get_linaro android-toolchain-eabi 4.7 2013.11 x86`
+ export BUILD_CROSS_COMPILE=`check_and_get_linaro android-toolchain-eabi 4.7 2014.01 x86`
 
 # use aosp pulibuild
 # export BUILD_CROSS_COMPILE=`check_and_get_aosp_prebuild arm-eabi 4.6`
