@@ -466,13 +466,6 @@ static void an30259a_set_led_blink(enum an30259a_led_enum led,
 	max_brightness = (led_lowpower_mode) ?
 			leds_control.current_low : leds_control.current_high;
 
-	if (led == LED_R)
-		LED_DYNAMIC_CURRENT = LED_R_CURRENT;
-	else if (led == LED_G)
-		LED_DYNAMIC_CURRENT = LED_G_CURRENT;
-	else if (led == LED_B)
-		LED_DYNAMIC_CURRENT = LED_B_CURRENT;
-
 	brightness = (brightness * max_brightness) / LED_MAX_CURRENT;
 
 	if (delay_on_time > SLPTT_MAX_VALUE)
