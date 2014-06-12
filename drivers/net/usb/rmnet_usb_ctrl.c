@@ -308,7 +308,8 @@ static int rmnet_usb_ctrl_start_rx(struct rmnet_ctrl_dev *dev)
 	retval = usb_submit_urb(dev->inturb, GFP_KERNEL);
 	if (retval < 0)
 		dev_err(dev->devicep, "%s Intr submit %d\n", __func__, retval);
-	pr_info("[CHKRA:%d]>\n", iface_num);
+	else
+		pr_info("[CHKRA:%d]>\n", iface_num);
 
 	return retval;
 }
@@ -482,6 +483,41 @@ static int rmnet_usb_ctrl_write(struct rmnet_ctrl_dev *dev, char *buf,
 		dev_err(dev->devicep, "Error allocating setup packet buffer\n");
 		return -ENOMEM;
 	}
+
+	if (dev->tx_block) {
+		kfree(buf);
+		usb_free_urb(sndurb);
+		kfree(out_ctlreq);
+		return size;
+	}
+
+	udev = interface_to_usbdev(dev->intf);
+
+#if defined (CONFIG_TARGET_LOCALE_USA) && defined (CONFIG_MACH_T0_USA_VZW)
+	if (sec_debug_level.uint_val != 0) {
+		spin_lock_irqsave(&dev->rx_lock, flag);
+
+		last_busy = ACCESS_ONCE(udev->dev.power.last_busy);
+		elapsed = jiffies - last_busy;
+		m_elapsed= jiffies_to_msecs(elapsed);
+
+		if ((m_elapsed>= 5000) && udev->dev.power.runtime_status == RPM_ACTIVE) {
+			dev_err(dev->devicep, "[MIF] Expire!!, elapsed : %d, "
+					"runtime_status : %d, usage_count : %d\n",
+					m_elapsed, udev->dev.power.runtime_status,
+					atomic_read(&udev->dev.power.usage_count));
+			dev_err(dev->devicep, "decreasing usage_count...");
+			if (atomic_dec_and_test(&udev->dev.power.usage_count))
+				dev_err(dev->devicep, "done\n");
+			else
+				dev_err(dev->devicep, "failed. usage_count : %d\n",
+							atomic_read(&udev->dev.power.usage_count));
+		}
+		spin_unlock_irqrestore(&dev->rx_lock, flag);
+	}
+#endif
+
+	usb_mark_last_busy(udev);
 
 	/* CDC Send Encapsulated Request packet */
 	out_ctlreq->bRequestType = (USB_DIR_OUT | USB_TYPE_CLASS |
