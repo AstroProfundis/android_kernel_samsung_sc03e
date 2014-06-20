@@ -175,6 +175,14 @@ static int lowmem_shrink(struct shrinker *s, struct shrink_control *sc)
 			time_before_eq(jiffies, lowmem_deathpending_timeout))
 			return 0;
 	}
+
+#if defined (CONFIG_SWAP) && (defined (CONFIG_ZSWAP) || defined (CONFIG_ZRAM))
+	si_swapinfo(&si);
+	other_free = global_page_state(NR_FREE_PAGES);
+	other_file = global_page_state(NR_FILE_PAGES) -
+						global_page_state(NR_SHMEM) +
+						(si.freeswap >> 1) -
+						total_swapcache_pages;
 #else
 	if (lowmem_deathpending &&
 	    time_before_eq(jiffies, lowmem_deathpending_timeout))
