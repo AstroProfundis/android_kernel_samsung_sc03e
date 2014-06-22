@@ -52,6 +52,11 @@ if test -z "$KBUILD_BUILD_HOST"; then
 else
 	LINUX_COMPILE_HOST=$KBUILD_BUILD_HOST
 fi
+if test -z "$KBUILD_BUILD_COMPILER"; then
+	LINUX_COMPILER=`$CC -v 2>&1 | tail -n 1`
+else
+	LINUX_COMPILER=$KBUILD_BUILD_COMPILER
+fi
 
 UTS_VERSION="#$VERSION"
 CONFIG_FLAGS=""
@@ -76,7 +81,7 @@ UTS_TRUNCATE="cut -b -$UTS_LEN"
   echo \#define LINUX_COMPILE_BY \"`echo $LINUX_COMPILE_BY | $UTS_TRUNCATE`\"
   echo \#define LINUX_COMPILE_HOST \"`echo $LINUX_COMPILE_HOST | $UTS_TRUNCATE`\"
 
-  echo \#define LINUX_COMPILER \"`$CC -v 2>&1 | tail -n 1`\"
+  echo \#define LINUX_COMPILER \"`echo $LINUX_COMPILER | $UTS_TRUNCATE`\"
 ) > .tmpcompile
 
 # Only replace the real compile.h if the new one is different,
