@@ -227,7 +227,6 @@ static unsigned int asv_3d_volt_9_table_for_prime[MALI_DVFS_STEPS][ASV_LEVEL_PRI
 #endif
 #endif
 };
-
 #else
 
 static unsigned int asv_3d_volt_4210_12_table[MALI_DVFS_STEPS][ASV_LEVEL_4210_12] = {
@@ -544,6 +543,9 @@ void mali_clk_set_rate(unsigned int clk, unsigned int mhz)
 
 	if (bis_vpll)
 	{
+		/* in Pega-prime, vpll_src_clock means ext_xtal_clock!! */
+		clk_set_parent(sclk_vpll_clock, vpll_src_clock);
+
 		clk_set_rate(mali_clock, (clk_get_rate(mali_clock) / 5));
 		clk_set_parent(mali_mout0_clock, mpll_clock);
 		clk_set_parent(mali_clock, mali_mout0_clock);
@@ -1316,7 +1318,7 @@ int mali_dvfs_bottom_lock_pop(void)
 	if (prev_status <= 0) {
 		MALI_PRINT(("gpu bottom lock status is not valid for pop\n"));
 		return -1;
-	} else if (prev_status == 1) {
+	} else if (prev_status >= 1) {
 		bottom_lock_step = 0;
 		MALI_PRINT(("gpu bottom lock release\n"));
 	}
