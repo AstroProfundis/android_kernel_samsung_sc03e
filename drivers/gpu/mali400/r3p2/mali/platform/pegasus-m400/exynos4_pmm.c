@@ -153,8 +153,9 @@ mali_dvfs_table mali_dvfs[MALI_DVFS_STEPS]={
 #endif
 
 #ifdef EXYNOS4_ASV_ENABLED
-#define ASV_LEVEL	 12	/* ASV0, 1, 11 is reserved */
-#define ASV_LEVEL_PRIME	 13  /* ASV0, 1, 12 is reserved */
+#define ASV_LEVEL	12	/* ASV0, 1, 11 is reserved */
+#define ASV_LEVEL_PRIME	13	/* ASV0, 1, 12 is reserved */
+#define ASV_LEVEL_PD	13
 #define ASV_LEVEL_4210_12	8
 #define ASV_LEVEL_4210_14	5
 
