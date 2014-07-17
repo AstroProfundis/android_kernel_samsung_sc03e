@@ -185,10 +185,6 @@ config CPU_FREQ_DEFAULT_GOV_SMARTASS2
 	help
           Use the CPUFreq governor 'smartassV2' as default.
 
-config CPU_FREQ_DEFAULT_GOV_PEGASUSQPLUS
-	bool "pegasusqplus"
-	select CPU_FREQ_GOV_PEGASUSQPLUS
-
 config CPU_FREQ_DEFAULT_GOV_INTELLIACTIVE
 	bool "intelliactive"
 	select CPU_FREQ_GOV_INTELLIACTIVE
