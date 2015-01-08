@@ -87,19 +87,6 @@ static void vfp_force_reload(unsigned int cpu, struct thread_info *thread)
 }
 
 /*
- * Is 'thread's most up to date state stored in this CPUs hardware?
- * Must be called from non-preemptible context.
- */
-static bool vfp_state_in_hw(unsigned int cpu, struct thread_info *thread)
-{
-#ifdef CONFIG_SMP
-	if (thread->vfpstate.hard.cpu != cpu)
-		return false;
-#endif
-	return vfp_current_hw_state[cpu] == &thread->vfpstate;
-}
-
-/*
  * Per-thread VFP initialization.
  */
 static void vfp_thread_flush(struct thread_info *thread)
