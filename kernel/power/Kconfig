@@ -353,3 +353,6 @@ config SPEEDUP_KEYRESUME
 	---help---
 	  Speed up system resume
 	  
+config CPU_PM
+	bool
+	depends on SUSPEND || CPU_IDLE
