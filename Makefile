@@ -367,8 +367,8 @@ KBUILD_CPPFLAGS := -D__KERNEL__
 KBUILD_CFLAGS   := -Wall -Wundef -Wstrict-prototypes -Wno-trigraphs \
 		   -fno-strict-aliasing -fno-common \
 		   -Werror-implicit-function-declaration \
-		   -Wno-format-security \
-		   -fno-delete-null-pointer-checks \
+		   -Wno-format-security -fno-diagnostics-show-caret \
+		   -fno-delete-null-pointer-checks -Wno-array-bounds \
 		   -marm -march=armv7-a -mcpu=cortex-a9 -mfpu=neon \
 		   -mtune=cortex-a9 -fno-pic -mno-unaligned-access \
 		   -ffast-math -fsingle-precision-constant \
