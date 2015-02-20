@@ -16,6 +16,7 @@
  * __put_user_X
  *
  * Inputs:	r0 contains the address
+ *		r1 contains the address limit, which must be preserved
  *		r2, r3 contains the value
  * Outputs:	r0 is the error code
  *		lr corrupted
