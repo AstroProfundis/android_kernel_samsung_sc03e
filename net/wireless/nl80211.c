@@ -4933,7 +4933,7 @@ static int nl80211_testmode_do(struct sk_buff *skb, struct genl_info *info)
 static int nl80211_testmode_dump(struct sk_buff *skb,
 				 struct netlink_callback *cb)
 {
-	struct cfg80211_registered_device *rdev;
+	struct cfg80211_registered_device *dev;
 	int err;
 	long phy_idx;
 	void *data = NULL;
@@ -4951,21 +4951,9 @@ static int nl80211_testmode_dump(struct sk_buff *skb,
 				  nl80211_policy);
 		if (err)
 			return err;
-		if (nl80211_fam.attrbuf[NL80211_ATTR_WIPHY]) {
-			phy_idx = nla_get_u32(
-				nl80211_fam.attrbuf[NL80211_ATTR_WIPHY]);
-		} else {
-			struct net_device *netdev;
-
-			err = get_rdev_dev_by_ifindex(sock_net(skb->sk),
-						      nl80211_fam.attrbuf,
-						      &rdev, &netdev);
-			if (err)
-				return err;
-			dev_put(netdev);
-			phy_idx = rdev->wiphy_idx;
-			cfg80211_unlock_rdev(rdev);
-		}
+		if (!nl80211_fam.attrbuf[NL80211_ATTR_WIPHY])
+			return -EINVAL;
+		phy_idx = nla_get_u32(nl80211_fam.attrbuf[NL80211_ATTR_WIPHY]);
 		if (nl80211_fam.attrbuf[NL80211_ATTR_TESTDATA])
 			cb->args[1] =
 				(long)nl80211_fam.attrbuf[NL80211_ATTR_TESTDATA];
@@ -4977,15 +4965,15 @@ static int nl80211_testmode_dump(struct sk_buff *skb,
 	}
 
 	mutex_lock(&cfg80211_mutex);
-	rdev = cfg80211_rdev_by_wiphy_idx(phy_idx);
-	if (!rdev) {
+	dev = cfg80211_rdev_by_wiphy_idx(phy_idx);
+	if (!dev) {
 		mutex_unlock(&cfg80211_mutex);
 		return -ENOENT;
 	}
-	cfg80211_lock_rdev(rdev);
+	cfg80211_lock_rdev(dev);
 	mutex_unlock(&cfg80211_mutex);
 
-	if (!rdev->ops->testmode_dump) {
+	if (!dev->ops->testmode_dump) {
 		err = -EOPNOTSUPP;
 		goto out_err;
 	}
@@ -4996,7 +4984,7 @@ static int nl80211_testmode_dump(struct sk_buff *skb,
 					   NL80211_CMD_TESTMODE);
 		struct nlattr *tmdata;
 
-		if (nla_put_u32(skb, NL80211_ATTR_WIPHY, phy_idx) < 0) {
+		if (nla_put_u32(skb, NL80211_ATTR_WIPHY, dev->wiphy_idx) < 0) {
 			genlmsg_cancel(skb, hdr);
 			break;
 		}
@@ -5006,8 +4994,8 @@ static int nl80211_testmode_dump(struct sk_buff *skb,
 			genlmsg_cancel(skb, hdr);
 			break;
 		}
-		err = rdev->ops->testmode_dump(&rdev->wiphy, skb, cb,
-					       data, data_len);
+		err = dev->ops->testmode_dump(&dev->wiphy, skb, cb,
+					      data, data_len);
 		nla_nest_end(skb, tmdata);
 
 		if (err == -ENOBUFS || err == -ENOENT) {
@@ -5025,7 +5013,7 @@ static int nl80211_testmode_dump(struct sk_buff *skb,
 	/* see above */
 	cb->args[0] = phy_idx + 1;
  out_err:
-	cfg80211_unlock_rdev(rdev);
+	cfg80211_unlock_rdev(dev);
 	return err;
 }
 
