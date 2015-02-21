@@ -19,7 +19,6 @@
  *
  */
 
-#include <linux/interrupt.h>
 #include <linux/irq.h>
 #include <linux/module.h>
 #include <linux/slab.h>

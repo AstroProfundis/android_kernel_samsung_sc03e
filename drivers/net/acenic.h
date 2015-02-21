@@ -1,6 +1,5 @@
 #ifndef _ACENIC_H_
 #define _ACENIC_H_
-#include <linux/interrupt.h>
 
 
 /*

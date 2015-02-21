@@ -7,7 +7,6 @@
 #ifndef _QLGE_H_
 #define _QLGE_H_
 
-#include <linux/interrupt.h>
 #include <linux/pci.h>
 #include <linux/netdevice.h>
 #include <linux/rtnetlink.h>

@@ -13,7 +13,6 @@
 	Please submit bugs to http://bugzilla.kernel.org/ .
 */
 
-#include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/jiffies.h>
 #include "tulip.h"

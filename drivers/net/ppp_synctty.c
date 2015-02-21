@@ -44,7 +44,6 @@
 #include <linux/spinlock.h>
 #include <linux/completion.h>
 #include <linux/init.h>
-#include <linux/interrupt.h>
 #include <linux/slab.h>
 #include <asm/unaligned.h>
 #include <asm/uaccess.h>

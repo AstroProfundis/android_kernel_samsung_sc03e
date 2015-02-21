@@ -16,7 +16,6 @@
  */
 
 #include <linux/init.h>
-#include <linux/interrupt.h>
 #include <linux/if.h>
 #include <linux/skbuff.h>
 #include <linux/slab.h>

@@ -8,7 +8,6 @@
 
 #define pr_fmt(fmt) KBUILD_MODNAME ": " fmt
 
-#include <linux/hardirq.h>
 #include <linux/sched.h>
 #include <linux/wait.h>
 #include <linux/slab.h>

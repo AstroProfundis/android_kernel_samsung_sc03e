@@ -32,7 +32,6 @@
 #include <linux/vmalloc.h>
 #include <linux/string.h>
 #include <linux/in.h>
-#include <linux/interrupt.h>
 #include <linux/ip.h>
 #include <linux/tcp.h>
 #include <linux/pkt_sched.h>

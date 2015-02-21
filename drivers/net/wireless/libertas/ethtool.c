@@ -1,4 +1,3 @@
-#include <linux/hardirq.h>
 #include <linux/netdevice.h>
 #include <linux/ethtool.h>
 #include <linux/delay.h>

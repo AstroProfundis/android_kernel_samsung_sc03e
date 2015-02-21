@@ -19,7 +19,6 @@
  ***************************************************************************
  */
 
-#include <linux/interrupt.h>
 #include <linux/kernel.h>
 #include <linux/netdevice.h>
 #include <linux/phy.h>

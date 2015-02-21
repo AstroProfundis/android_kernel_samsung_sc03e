@@ -37,7 +37,6 @@
 #include <linux/atm.h>
 #include <linux/delay.h>
 #include <linux/init.h>
-#include <linux/interrupt.h>
 #include <linux/bitops.h>
 #include <linux/wait.h>
 #include <linux/jiffies.h>

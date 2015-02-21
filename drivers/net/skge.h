@@ -3,7 +3,6 @@
  */
 #ifndef _SKGE_H
 #define _SKGE_H
-#include <linux/interrupt.h>
 
 /* PCI config registers */
 #define PCI_DEV_REG1	0x40
