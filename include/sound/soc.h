@@ -638,7 +638,8 @@ struct snd_soc_platform_driver {
 	int (*resume)(struct snd_soc_dai *dai);
 
 	/* pcm creation and destruction */
-	int (*pcm_new)(struct snd_soc_pcm_runtime *);
+	int (*pcm_new)(struct snd_card *, struct snd_soc_dai *,
+		struct snd_pcm *);
 	void (*pcm_free)(struct snd_pcm *);
 
 	/*
