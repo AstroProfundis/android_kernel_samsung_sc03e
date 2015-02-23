@@ -53,7 +53,8 @@ else
 	LINUX_COMPILE_HOST=$KBUILD_BUILD_HOST
 fi
 if test -z "$KBUILD_BUILD_COMPILER"; then
-	LINUX_COMPILER=`$CC -v 2>&1 | tail -n 1`
+        # For ARM cpu optimized Linaro GCC Toolchains
+	LINUX_COMPILER=`$CC -v 2>&1 | tail -n 1 | awk -F " " '{print $1,$2,$3,"("$9,$11,$12,$13}'`
 else
 	LINUX_COMPILER=$KBUILD_BUILD_COMPILER
 fi
