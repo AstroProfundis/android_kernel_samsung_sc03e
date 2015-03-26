@@ -50,7 +50,7 @@ static bool is_jig_on;
 
 
 /* cable state */
-bool is_cable_attached;
+extern bool is_cable_attached;
 
 static void sec_bat_initial_check(void)
 {

@@ -198,7 +198,7 @@ static struct syna_gpio_data rmi4_default_gpio_data = {
 
 #define SYNA_ADDR 0x20
 
-static unsigned char SYNA_f1a_button_codes[] =  {KEY_MENU, KEY_BACK};
+static unsigned char SYNA_f1a_button_codes[] =  {KEY_DUMMY_1, KEY_MENU, KEY_DUMMY_2, KEY_BACK, KEY_DUMMY_3};
 
 static struct rmi_button_map SYNA_f1a_button_map = {
 	.nbuttons = ARRAY_SIZE(SYNA_f1a_button_codes),
@@ -387,6 +387,16 @@ struct gpio_keys_button kona_buttons[] = {
 		  1, 1, sec_debug_check_crash_key),
 	GPIO_KEYS(KEY_HOMEPAGE, GPIO_OK_KEY_ANDROID,
 		  1, 1, sec_debug_check_crash_key),
+	{
+		.code = SW_FLIP,
+		.gpio = GPIO_HALL_SENSOR_INT,
+		.active_low = 0,
+		.type = EV_SW,
+		.wakeup = 1,
+		.debounce_interval = 10,
+		.value = 1,
+		.isr_hook = sec_debug_check_crash_key,
+	},
 };
 
 struct gpio_keys_platform_data kona_gpiokeys_platform_data = {
