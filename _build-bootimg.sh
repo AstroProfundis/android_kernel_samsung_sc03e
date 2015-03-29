@@ -86,6 +86,7 @@ fi
 # *.ko install
 echo ""
 echo "=====> INSTALL KERNEL MODULES"
+mkdir -p $BOOT_RAMDISK_TMP_DIR/lib/modules/
 if [ "$USE_INITRAMFS" = 'y' ]; then
   find -name '*.ko' -exec cp -av {} $BOOT_RAMDISK_TMP_DIR/lib/modules/ \;
   STRIP=strip
