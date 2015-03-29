@@ -54,10 +54,6 @@
 #include <asm/sh_bios.h>
 #endif
 
-#ifdef CONFIG_H8300
-#include <asm/gpio.h>
-#endif
-
 #include "sh-sci.h"
 
 struct sci_port {
@@ -164,23 +160,7 @@ static void sci_poll_put_char(struct uart_port *port, unsigned char c)
 }
 #endif /* CONFIG_CONSOLE_POLL || CONFIG_SERIAL_SH_SCI_CONSOLE */
 
-#if defined(__H8300H__) || defined(__H8300S__)
-static void sci_init_pins(struct uart_port *port, unsigned int cflag)
-{
-	int ch = (port->mapbase - SMR0) >> 3;
-
-	/* set DDR regs */
-	H8300_GPIO_DDR(h8300_sci_pins[ch].port,
-		       h8300_sci_pins[ch].rx,
-		       H8300_GPIO_INPUT);
-	H8300_GPIO_DDR(h8300_sci_pins[ch].port,
-		       h8300_sci_pins[ch].tx,
-		       H8300_GPIO_OUTPUT);
-
-	/* tx mark output*/
-	H8300_SCI_DR(ch) |= h8300_sci_pins[ch].tx;
-}
-#elif defined(CONFIG_CPU_SUBTYPE_SH7710) || defined(CONFIG_CPU_SUBTYPE_SH7712)
+#if defined(CONFIG_CPU_SUBTYPE_SH7710) || defined(CONFIG_CPU_SUBTYPE_SH7712)
 static inline void sci_init_pins(struct uart_port *port, unsigned int cflag)
 {
 	if (port->mapbase == 0xA4400000) {
@@ -383,6 +363,19 @@ static int sci_rxfill(struct uart_port *port)
 	return (sci_in(port, SCxSR) & SCxSR_RDxF(port)) != 0;
 }
 
+/*
+ * SCI helper for checking the state of the muxed port/RXD pins.
+ */
+static inline int sci_rxd_in(struct uart_port *port)
+{
+	struct sci_port *s = to_sci_port(port);
+
+	if (s->cfg->port_reg <= 0)
+		return 1;
+
+	return !!__raw_readb(s->cfg->port_reg);
+}
+
 /* ********************************************************************** *
  *                   the interrupt related routines                       *
  * ********************************************************************** */
@@ -583,13 +576,19 @@ static int sci_handle_errors(struct uart_port *port)
 	int copied = 0;
 	unsigned short status = sci_in(port, SCxSR);
 	struct tty_struct *tty = port->state->port.tty;
+	struct sci_port *s = to_sci_port(port);
 
-	if (status & SCxSR_ORER(port)) {
-		/* overrun error */
-		if (tty_insert_flip_char(tty, 0, TTY_OVERRUN))
-			copied++;
+	/*
+	 * Handle overruns, if supported.
+	 */
+	if (s->cfg->overrun_bit != SCIx_NOT_SUPPORTED) {
+		if (status & (1 << s->cfg->overrun_bit)) {
+			/* overrun error */
+			if (tty_insert_flip_char(tty, 0, TTY_OVERRUN))
+				copied++;
 
-		dev_notice(port->dev, "overrun error");
+			dev_notice(port->dev, "overrun error");
+		}
 	}
 
 	if (status & SCxSR_FER(port)) {
@@ -637,12 +636,19 @@ static int sci_handle_errors(struct uart_port *port)
 static int sci_handle_fifo_overrun(struct uart_port *port)
 {
 	struct tty_struct *tty = port->state->port.tty;
+	struct sci_port *s = to_sci_port(port);
 	int copied = 0;
 
+	/*
+	 * XXX: Technically not limited to non-SCIFs, it's simply the
+	 * SCLSR check that is for the moment SCIF-specific. This
+	 * probably wants to be revisited for SCIFA/B as well as for
+	 * factoring in SCI overrun detection.
+	 */
 	if (port->type != PORT_SCIF)
 		return 0;
 
-	if ((sci_in(port, SCLSR) & SCIF_ORER) != 0) {
+	if ((sci_in(port, SCLSR) & (1 << s->cfg->overrun_bit))) {
 		sci_out(port, SCLSR, 0);
 
 		tty_insert_flip_char(tty, 0, TTY_OVERRUN);
@@ -1780,6 +1786,32 @@ static int __devinit sci_init_single(struct platform_device *dev,
 	sci_port->break_timer.function = sci_break_timer;
 	init_timer(&sci_port->break_timer);
 
+	/*
+	 * Establish some sensible defaults for the error detection.
+	 */
+	if (!p->error_mask)
+		p->error_mask = (p->type == PORT_SCI) ?
+			SCI_DEFAULT_ERROR_MASK : SCIF_DEFAULT_ERROR_MASK;
+
+	/*
+	 * Establish sensible defaults for the overrun detection, unless
+	 * the part has explicitly disabled support for it.
+	 */
+	if (p->overrun_bit != SCIx_NOT_SUPPORTED) {
+		if (p->type == PORT_SCI)
+			p->overrun_bit = 5;
+		else if (p->scbrr_algo_id == SCBRR_ALGO_4)
+			p->overrun_bit = 9;
+		else
+			p->overrun_bit = 0;
+
+		/*
+		 * Make the error mask inclusive of overrun detection, if
+		 * supported.
+		 */
+		p->error_mask |= (1 << p->overrun_bit);
+	}
+
 	sci_port->cfg		= p;
 
 	port->mapbase		= p->mapbase;
@@ -1868,14 +1900,8 @@ static int __devinit serial_console_setup(struct console *co, char *options)
 	if (options)
 		uart_parse_options(options, &baud, &parity, &bits, &flow);
 
-	ret = uart_set_options(port, co, baud, parity, bits, flow);
-#if defined(__H8300H__) || defined(__H8300S__)
-	/* disable rx interrupt */
-	if (ret == 0)
-		sci_stop_rx(port);
-#endif
 	/* TODO: disable clock */
-	return ret;
+	return uart_set_options(port, co, baud, parity, bits, flow);
 }
 
 static struct console serial_console = {
