@@ -84,7 +84,7 @@ void exit_io_context(struct task_struct *task)
 
 struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
 {
-	struct io_context *ioc;
+	struct io_context *ret;
 
 	ret = kmem_cache_alloc_node(iocontext_cachep, gfp_flags, node);
 	if (ret) {
@@ -101,11 +101,11 @@ struct io_context *alloc_io_context(gfp_t gfp_flags, int node)
 		INIT_HLIST_HEAD(&ret->bfq_cic_list);
 		ret->ioc_data = NULL;
 #if defined(CONFIG_BLK_CGROUP) || defined(CONFIG_BLK_CGROUP_MODULE)
-		ioc->cgroup_changed = 0;
+		ret->cgroup_changed = 0;
 #endif
 	}
 
-	return ioc;
+	return ret;
 }
 
 /*
