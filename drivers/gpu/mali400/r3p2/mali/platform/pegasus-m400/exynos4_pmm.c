@@ -37,6 +37,17 @@
 
 #include <linux/workqueue.h>
 
+#ifdef CONFIG_CPU_EXYNOS4210
+#define MALI_DVFS_STEPS 3
+#define MALI_DVFS_WATING 10 /* msec */
+#define MALI_DVFS_DEFAULT_STEP 0
+#else
+#define MALI_DVFS_STEPS 5
+#define MALI_DVFS_WATING 10 /* msec */
+#define MALI_DVFS_DEFAULT_STEP 1
+#define PD_G3D_LOCK_FLAG 2
+#endif
+
 #ifdef CONFIG_CPU_FREQ
 #include <mach/asv.h>
 #define EXYNOS4_ASV_ENABLED
@@ -136,7 +147,11 @@ typedef struct mali_runtime_resumeTag{
 	unsigned int step;
 }mali_runtime_resume_table;
 
-mali_runtime_resume_table mali_runtime_resume = {266, 900000, 1};
+#if defined(CONFIG_CPU_EXYNOS4212) || defined(CONFIG_CPU_EXYNOS4412)
+mali_runtime_resume_table mali_runtime_resume = {266, 900000, 1}; /* step 1 */
+#else
+mali_runtime_resume_table mali_runtime_resume = {160, 950000, 1}; /* step 1 */
+#endif
 
 /* dvfs table */
 mali_dvfs_table mali_dvfs[MALI_DVFS_STEPS]={
